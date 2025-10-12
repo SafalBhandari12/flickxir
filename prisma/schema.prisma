@@ -1,0 +1,614 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// ENUMS
+// ================================
+
+enum UserRole {
+  ADMIN
+  VENDOR
+  CUSTOMER
+}
+
+enum VendorType {
+  HOTEL
+  ADVENTURE
+  TRANSPORT
+  LOCAL_MARKET
+  OTHER
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum HotelCategory {
+  RESORT
+  HOMESTAY
+  HOUSEBOAT
+  GUESTHOUSE
+}
+
+enum RoomType {
+  STANDARD
+  DELUXE
+  SUITE
+  DORMITORY
+}
+
+enum VehicleType {
+  SEDAN
+  SUV
+  HATCHBACK
+  SHIKARA
+  TEMPO
+  BUS
+}
+
+enum ActivityType {
+  TREKKING
+  RAFTING
+  GONDOLA
+  SKIING
+  CAMPING
+  OTHER
+}
+
+enum ProductCategory {
+  HANDICRAFT
+  SAFFRON
+  DRY_FRUITS
+  WOOLENS
+  WOODWORK
+  OTHER
+}
+
+enum PaymentFrequency {
+  WEEKLY
+  MONTHLY
+}
+
+enum BookingStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// ================================
+// AUTHENTICATION & USER MANAGEMENT
+// ================================
+
+model User {
+  id          String   @id @default(cuid())
+  phoneNumber String   @unique
+  role        UserRole @default(CUSTOMER)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // OTP Management
+  otps OTP[]
+
+  // Refresh Token Management
+  refreshTokens RefreshToken[]
+
+  // Vendor Profile (if user is vendor)
+  vendorProfile Vendor?
+
+  // Admin Profile (if user is admin)
+  adminProfile Admin?
+
+  // Customer bookings
+  bookings Booking[]
+
+  @@map("users")
+}
+
+model OTP {
+  id             String   @id @default(cuid())
+  userId         String
+  phoneNumber    String   // Store the phone number for reference
+  verificationId String   // MessageCentral's verificationId from send OTP response
+  otpCode        String?  // Optional: store OTP code if needed for debugging
+  expiresAt      DateTime // Set based on MessageCentral's timeout (default 60 seconds)
+  isUsed         Boolean  @default(false)
+  isVerified     Boolean  @default(false)
+  attempts       Int      @default(0) // Track validation attempts
+  maxAttempts    Int      @default(3) // Maximum allowed attempts
+  createdAt      DateTime @default(now())
+  verifiedAt     DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otps")
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  userId      String
+  tokenId     String   @unique // Unique identifier for this specific refresh token
+  isRevoked   Boolean  @default(false) // Can be revoked manually
+  expiresAt   DateTime // Absolute expiration (e.g., 30 days from first login)
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([tokenId])
+}
+
+model Admin {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  fullName    String
+  email       String?  @unique
+  permissions String[] // JSON array of permissions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admins")
+}
+
+// ================================
+// VENDOR MANAGEMENT
+// ================================
+
+model Vendor {
+  id               String        @id @default(cuid())
+  userId           String        @unique
+  businessName     String
+  ownerName        String
+  contactNumbers   String[] // Array of phone numbers
+  email            String
+  businessAddress  String
+  googleMapsLink   String
+  gstNumber        String
+  panNumber        String
+  aadhaarNumber    String
+  vendorType       VendorType
+  status           VendorStatus  @default(PENDING)
+  commissionRate   Float         @default(16.0) // Percentage
+  paymentFrequency PaymentFrequency @default(MONTHLY)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Bank Details
+  bankDetails BankDetails?
+
+  // Vendor specific profiles
+  hotelProfile     HotelProfile?
+  adventureProfile AdventureProfile?
+  transportProfile TransportProfile?
+  marketProfile    LocalMarketProfile?
+
+  // Business operations
+  bookings    Booking[]
+  payments    Payment[]
+  documents   VendorDocument[]
+  agreements  VendorAgreement[]
+  images      VendorImage[]
+
+  @@map("vendors")
+}
+
+model BankDetails {
+  id            String @id @default(cuid())
+  vendorId      String @unique
+  accountNumber String
+  ifscCode      String
+  bankName      String
+  branchName    String
+  accountHolder String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("bank_details")
+}
+
+model VendorDocument {
+  id          String   @id @default(cuid())
+  vendorId    String
+  documentType String  // "license", "registration", "gst_certificate", etc.
+  documentUrl String   // Blob storage URL
+  isVerified  Boolean  @default(false)
+  uploadedAt  DateTime @default(now())
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_documents")
+}
+
+model VendorImage {
+  id          String   @id @default(cuid())
+  vendorId    String
+  imageUrl    String   // Blob storage URL
+  imageType   String   // "profile", "property", "product", "vehicle", "room", etc.
+  description String?
+  isPrimary   Boolean  @default(false)
+  roomId      String?  // Optional - for room-specific images
+  uploadedAt  DateTime @default(now())
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  room   Room?  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_images")
+}
+
+model VendorAgreement {
+  id               String   @id @default(cuid())
+  vendorId         String
+  commissionRate   Float
+  paymentTerms     String
+  cancellationTerms String
+  insuranceCoverage String?
+  trialOffers      String?
+  signedAt         DateTime @default(now())
+  isActive         Boolean  @default(true)
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_agreements")
+}
+
+// ================================
+// HOTEL/HOMESTAY/RESORT PROFILE
+// ================================
+
+model HotelProfile {
+  id                String         @id @default(cuid())
+  vendorId          String         @unique
+  hotelName         String
+  category          HotelCategory
+  totalRooms        Int
+  amenities         String[]       // JSON array
+  cancellationPolicy String
+  checkInTime       String
+  checkOutTime      String
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  rooms    Room[]
+  bookings HotelBooking[]
+
+  @@map("hotel_profiles")
+}
+
+model Room {
+  id             String     @id @default(cuid())
+  hotelProfileId String
+  roomType       RoomType
+  roomNumber     String?
+  capacity       Int
+  basePrice      Float
+  summerPrice    Float?
+  winterPrice    Float?
+  amenities      String[]   // JSON array
+  isAvailable    Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  hotelProfile HotelProfile @relation(fields: [hotelProfileId], references: [id], onDelete: Cascade)
+  bookings     HotelBooking[]
+  images       VendorImage[]
+
+  @@map("rooms")
+}
+
+model HotelBooking {
+  id             String        @id @default(cuid())
+  bookingId      String
+  hotelProfileId String
+  roomId         String
+  checkInDate    DateTime
+  checkOutDate   DateTime
+  numberOfGuests Int
+  totalAmount    Float
+  status         BookingStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotelProfile HotelProfile @relation(fields: [hotelProfileId], references: [id], onDelete: Cascade)
+  room         Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("hotel_bookings")
+}
+
+// ================================
+// ADVENTURE ACTIVITIES PROFILE
+// ================================
+
+model AdventureProfile {
+  id        String   @id @default(cuid())
+  vendorId  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendor     Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  activities Activity[]
+  bookings   AdventureBooking[]
+
+  @@map("adventure_profiles")
+}
+
+model Activity {
+  id                  String       @id @default(cuid())
+  adventureProfileId  String
+  activityName        String
+  activityType        ActivityType
+  location            String
+  duration            String       // "2 hours", "1 day", etc.
+  pricePerPerson      Float
+  pricePerGroup       Float?
+  maxGroupSize        Int
+  safetyMeasures      String[]     // JSON array
+  requiredDocuments   String[]     // JSON array
+  seasonalAvailability String      // JSON object
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  adventureProfile AdventureProfile @relation(fields: [adventureProfileId], references: [id], onDelete: Cascade)
+  bookings         AdventureBooking[]
+
+  @@map("activities")
+}
+
+model AdventureBooking {
+  id                 String        @id @default(cuid())
+  bookingId          String
+  adventureProfileId String
+  activityId         String
+  bookingDate        DateTime
+  numberOfPeople     Int
+  totalAmount        Float
+  status             BookingStatus @default(PENDING)
+  createdAt          DateTime      @default(now())
+
+  booking          Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  adventureProfile AdventureProfile @relation(fields: [adventureProfileId], references: [id], onDelete: Cascade)
+  activity         Activity         @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@map("adventure_bookings")
+}
+
+// ================================
+// TRANSPORT PROFILE
+// ================================
+
+model TransportProfile {
+  id        String   @id @default(cuid())
+  vendorId  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendor   Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  vehicles Vehicle[]
+  bookings TransportBooking[]
+
+  @@map("transport_profiles")
+}
+
+model Vehicle {
+  id                 String      @id @default(cuid())
+  transportProfileId String
+  vehicleType        VehicleType
+  seatingCapacity    Int
+  registrationNumber String      @unique
+  driverName         String
+  driverLicense      String
+  driverContact      String
+  pricePerKm         Float?
+  pricePerHour       Float?
+  pricePerRide       Float?
+  availability       String      // JSON object for time slots
+  insuranceDetails   String
+  isAvailable        Boolean     @default(true)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  transportProfile TransportProfile @relation(fields: [transportProfileId], references: [id], onDelete: Cascade)
+  bookings         TransportBooking[]
+
+  @@map("vehicles")
+}
+
+model TransportBooking {
+  id                 String        @id @default(cuid())
+  bookingId          String
+  transportProfileId String
+  vehicleId          String
+  pickupLocation     String
+  dropLocation       String
+  bookingDate        DateTime
+  pickupTime         DateTime
+  totalAmount        Float
+  status             BookingStatus @default(PENDING)
+  createdAt          DateTime      @default(now())
+
+  booking          Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  transportProfile TransportProfile @relation(fields: [transportProfileId], references: [id], onDelete: Cascade)
+  vehicle          Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@map("transport_bookings")
+}
+
+// ================================
+// LOCAL MARKET PROFILE
+// ================================
+
+model LocalMarketProfile {
+  id        String   @id @default(cuid())
+  vendorId  String   @unique
+  shopName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendor   Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  products Product[]
+  bookings MarketBooking[]
+
+  @@map("local_market_profiles")
+}
+
+model Product {
+  id                   String          @id @default(cuid())
+  localMarketProfileId String
+  productName          String
+  category             ProductCategory
+  description          String?
+  priceMin             Float
+  priceMax             Float
+  minOrderQuantity     Int             @default(1)
+  hasDelivery          Boolean         @default(false)
+  deliveryAreas        String[]
+  certifications       String[]
+  isAvailable          Boolean         @default(true)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  localMarketProfile LocalMarketProfile @relation(fields: [localMarketProfileId], references: [id], onDelete: Cascade)
+  bookings           MarketBooking[]
+
+  @@map("products")
+}
+
+model MarketBooking {
+  id                   String        @id @default(cuid())
+  bookingId            String
+  localMarketProfileId String
+  productId            String
+  quantity             Int
+  unitPrice            Float
+  totalAmount          Float
+  requiresDelivery     Boolean       @default(false)
+  deliveryAddress      String?
+  status               BookingStatus @default(PENDING)
+  createdAt            DateTime      @default(now())
+
+  booking            Booking            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  localMarketProfile LocalMarketProfile @relation(fields: [localMarketProfileId], references: [id], onDelete: Cascade)
+  product            Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("market_bookings")
+}
+
+// ================================
+// BOOKING SYSTEM
+// ================================
+
+model Booking {
+  id            String        @id @default(cuid())
+  userId        String
+  vendorId      String
+  bookingType   VendorType
+  totalAmount   Float
+  commissionAmount Float
+  status        BookingStatus @default(PENDING)
+  bookingDate   DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  // Type-specific booking details
+  hotelBooking     HotelBooking[]
+  adventureBooking AdventureBooking[]
+  transportBooking TransportBooking[]
+  marketBooking    MarketBooking[]
+
+  payment Payment?
+
+  @@map("bookings")
+}
+
+// ================================
+// PAYMENT SYSTEM
+// ================================
+
+model Payment {
+  id              String   @id @default(cuid())
+  bookingId       String   @unique
+  vendorId        String
+  totalAmount     Float
+  commissionAmount Float
+  vendorAmount    Float
+  paymentMethod   String?  // "RAZORPAY", "CASH", "UPI", etc.
+  paymentStatus   String   @default("PENDING") // "PENDING", "SUCCESS", "FAILED", "REFUNDED"
+  transactionId   String?
+  razorpayOrderId String?  // Razorpay order ID
+  razorpayPaymentId String? // Razorpay payment ID
+  razorpaySignature String? // Razorpay payment signature for verification
+  processedAt     DateTime?
+  refundId        String?  // For refund tracking
+  refundAmount    Float?   // Partial refund amount
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  vendor  Vendor  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ================================
+// SYSTEM CONFIGURATIONS
+// ================================
+
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_configs")
+}
+
+// ================================
+// OTP SERVICE CONFIGURATION
+// ================================
+
+model OTPServiceConfig {
+  id                String   @id @default(cuid())
+  serviceName       String   @default("MessageCentral")
+  baseUrl           String   @default("https://cpaas.messagecentral.com")
+  customerId        String   // C-BEEDC8FDA85247F
+  authToken         String   // JWT token
+  countryCode       String   @default("91")
+  flowType          String   @default("SMS")
+  defaultTimeout    Int      @default(60) // seconds
+  maxAttempts       Int      @default(3)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("otp_service_configs")
+}

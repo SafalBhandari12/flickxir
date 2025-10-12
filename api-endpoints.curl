@@ -1,0 +1,515 @@
+# ================================
+# LOCAL MARKET PLATFORM API ENDPOINTS
+# ================================
+# Base URL: http://localhost:3000
+# All endpoints require proper authentication tokens where specified
+# Replace {{token}} with actual JWT token
+# Replace {{vendor_id}}, {{product_id}}, etc. with actual IDs
+
+# ================================
+# AUTHENTICATION ENDPOINTS
+# ================================
+
+### Send OTP for Registration/Login
+curl -X POST http://localhost:3000/auth/send-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "9876543210"
+  }'
+
+### Verify OTP and Get Tokens
+curl -X POST http://localhost:3000/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "9876543210",
+    "verificationId": "verification_id_from_send_otp",
+    "otpCode": "123456"
+  }'
+
+### Refresh Access Token
+curl -X POST http://localhost:3000/auth/refresh-token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "your_refresh_token_here"
+  }'
+
+### Logout
+curl -X POST http://localhost:3000/auth/logout \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json"
+
+# ================================
+# VENDOR MANAGEMENT ENDPOINTS
+# ================================
+
+### Vendor Onboarding (Customer becomes Vendor)
+curl -X POST http://localhost:3000/market/vendors/onboard \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "businessName": "Kashmir Handicrafts Store",
+    "ownerName": "John Doe",
+    "contactNumbers": ["9876543210", "9876543211"],
+    "email": "john@kashmirhandicrafts.com",
+    "businessAddress": "Lal Chowk, Srinagar, Kashmir 190001",
+    "googleMapsLink": "https://maps.google.com/?q=34.0837,74.7973",
+    "gstNumber": "15ABCDE1234F1Z5",
+    "panNumber": "ABCDE1234F",
+    "aadhaarNumber": "123456789012",
+    "vendorType": "LOCAL_MARKET",
+    "shopName": "Kashmir Handicrafts",
+    "bankDetails": {
+      "accountNumber": "1234567890",
+      "ifscCode": "SBIN0001234",
+      "bankName": "State Bank of India",
+      "branchName": "Lal Chowk Branch",
+      "accountHolder": "John Doe"
+    }
+  }'
+
+### Get Vendor Profile
+curl -X GET http://localhost:3000/market/vendors/profile \
+  -H "Authorization: Bearer {{token}}"
+
+### Update Vendor Profile
+curl -X PUT http://localhost:3000/market/vendors/profile \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "businessName": "Updated Business Name",
+    "contactNumbers": ["9876543210"],
+    "email": "updated@email.com"
+  }'
+
+### Get Vendor Dashboard Stats
+curl -X GET http://localhost:3000/market/vendors/dashboard \
+  -H "Authorization: Bearer {{token}}"
+
+### Get Vendor Earnings Report
+curl -X GET http://localhost:3000/market/vendors/earnings \
+  -H "Authorization: Bearer {{token}}"
+
+### Get Vendor Orders
+curl -X GET "http://localhost:3000/market/vendors/orders?status=PENDING&page=1&limit=10" \
+  -H "Authorization: Bearer {{token}}"
+
+# ================================
+# PRODUCT MANAGEMENT ENDPOINTS
+# ================================
+
+### Create New Product
+curl -X POST http://localhost:3000/market/products \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productName": "Kashmir Pashmina Shawl",
+    "category": "WOOLENS",
+    "description": "Authentic handwoven Pashmina shawl from Kashmir",
+    "priceMin": 5000,
+    "priceMax": 15000,
+    "minOrderQuantity": 1,
+    "hasDelivery": true,
+    "deliveryAreas": ["Srinagar", "Delhi", "Mumbai"],
+    "certifications": ["Handloom", "GI Tagged"]
+  }'
+
+### Get All Products (Public - No Auth Required)
+curl -X GET "http://localhost:3000/market/products?page=1&limit=10&category=HANDICRAFT&minPrice=1000&maxPrice=5000" \
+  -H "Content-Type: application/json"
+
+### Search Products (Public)
+curl -X GET "http://localhost:3000/market/products?query=saffron&hasDelivery=true&location=Delhi" \
+  -H "Content-Type: application/json"
+
+### Get Product by ID (Public)
+curl -X GET http://localhost:3000/market/products/{{product_id}} \
+  -H "Content-Type: application/json"
+
+### Get Vendor's Products
+curl -X GET http://localhost:3000/market/products/vendor/my-products \
+  -H "Authorization: Bearer {{token}}"
+
+### Update Product
+curl -X PUT http://localhost:3000/market/products/{{product_id}} \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productName": "Updated Product Name",
+    "priceMin": 6000,
+    "priceMax": 18000,
+    "isAvailable": true
+  }'
+
+### Delete Product
+curl -X DELETE http://localhost:3000/market/products/{{product_id}} \
+  -H "Authorization: Bearer {{token}}"
+
+### Upload Product Images
+curl -X POST http://localhost:3000/market/products/{{product_id}}/images \
+  -H "Authorization: Bearer {{token}}" \
+  -F "images=@/path/to/image1.jpg" \
+  -F "images=@/path/to/image2.jpg"
+
+# ================================
+# ORDER MANAGEMENT ENDPOINTS
+# ================================
+
+### Create Order
+curl -X POST http://localhost:3000/market/orders \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "productId": "{{product_id}}",
+        "quantity": 2,
+        "unitPrice": 5000,
+        "requiresDelivery": true,
+        "deliveryAddress": "123 Main Street, Delhi 110001"
+      }
+    ],
+    "totalAmount": 10000,
+    "paymentMethod": "RAZORPAY"
+  }'
+
+### Get User Orders
+curl -X GET "http://localhost:3000/market/orders?status=PENDING&page=1&limit=10" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get Order by ID
+curl -X GET http://localhost:3000/market/orders/{{order_id}} \
+  -H "Authorization: Bearer {{token}}"
+
+### Update Order Status (Vendor Only)
+curl -X PUT http://localhost:3000/market/orders/{{order_id}}/status \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "CONFIRMED",
+    "notes": "Order confirmed and will be shipped soon"
+  }'
+
+### Cancel Order
+curl -X PUT http://localhost:3000/market/orders/{{order_id}}/cancel \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "Changed mind"
+  }'
+
+# ================================
+# PAYMENT ENDPOINTS
+# ================================
+
+### Create Razorpay Order
+curl -X POST http://localhost:3000/market/orders/{{order_id}}/payment/create \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerInfo": {
+      "name": "John Doe",
+      "phone": "9876543210",
+      "email": "john@example.com"
+    }
+  }'
+
+### Verify Payment
+curl -X POST http://localhost:3000/market/orders/{{order_id}}/payment/verify \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "razorpay_payment_id": "pay_xxxxxxxxxxxxx",
+    "razorpay_order_id": "order_xxxxxxxxxxxxx",
+    "razorpay_signature": "signature_xxxxxxxxxxxxx"
+  }'
+
+### Get Payment Details
+curl -X GET http://localhost:3000/market/orders/{{order_id}}/payment \
+  -H "Authorization: Bearer {{token}}"
+
+# ================================
+# ADMIN ENDPOINTS
+# ================================
+
+### Get Dashboard Statistics
+curl -X GET http://localhost:3000/market/admin/dashboard \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Vendors
+curl -X GET "http://localhost:3000/market/admin/vendors?status=PENDING&page=1&limit=10" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get Vendor Details
+curl -X GET http://localhost:3000/market/admin/vendors/{{vendor_id}} \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Approve Vendor
+curl -X PUT http://localhost:3000/market/admin/vendors/{{vendor_id}}/approve \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "APPROVED",
+    "commissionRate": 12.0
+  }'
+
+### Reject Vendor
+curl -X PUT http://localhost:3000/market/admin/vendors/{{vendor_id}}/approve \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "REJECTED",
+    "rejectionReason": "Incomplete documentation"
+  }'
+
+### Get All Users
+curl -X GET "http://localhost:3000/market/admin/users?page=1&limit=10" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get User Details
+curl -X GET http://localhost:3000/market/admin/users/{{user_id}} \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Orders (Admin View)
+curl -X GET "http://localhost:3000/market/admin/orders?status=PENDING&page=1&limit=10" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get Analytics Report
+curl -X GET http://localhost:3000/market/admin/analytics \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get Revenue Report
+curl -X GET "http://localhost:3000/market/admin/reports/revenue?period=month" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get Vendor Performance Report
+curl -X GET http://localhost:3000/market/admin/reports/vendor-performance \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Update System Configuration
+curl -X PUT http://localhost:3000/market/admin/config \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "commissionRate": 15.0,
+    "maxProductImages": 6,
+    "minOrderAmount": 100
+  }'
+
+# ================================
+# NOTIFICATION ENDPOINTS
+# ================================
+
+### Get User Notifications
+curl -X GET "http://localhost:3000/market/notifications?page=1&limit=20" \
+  -H "Authorization: Bearer {{token}}"
+
+### Mark Notification as Read
+curl -X PUT http://localhost:3000/market/notifications/{{notification_id}}/read \
+  -H "Authorization: Bearer {{token}}"
+
+### Mark All Notifications as Read
+curl -X PUT http://localhost:3000/market/notifications/mark-all-read \
+  -H "Authorization: Bearer {{token}}"
+
+# ================================
+# SEARCH AND FILTER ENDPOINTS
+# ================================
+
+### Advanced Product Search
+curl -X GET "http://localhost:3000/market/products/search?query=kashmiri+saffron&category=SAFFRON&minPrice=2000&maxPrice=10000&hasDelivery=true&location=Delhi&sortBy=price&sortOrder=asc&page=1&limit=10" \
+  -H "Content-Type: application/json"
+
+### Get Product Categories
+curl -X GET http://localhost:3000/market/products/categories \
+  -H "Content-Type: application/json"
+
+### Get Delivery Areas
+curl -X GET http://localhost:3000/market/delivery-areas \
+  -H "Content-Type: application/json"
+
+### Search Vendors
+curl -X GET "http://localhost:3000/market/vendors/search?query=handicraft&location=Srinagar" \
+  -H "Content-Type: application/json"
+
+# ================================
+# FILE UPLOAD ENDPOINTS
+# ================================
+
+### Upload Vendor Profile Image
+curl -X POST http://localhost:3000/market/vendors/profile/image \
+  -H "Authorization: Bearer {{token}}" \
+  -F "image=@/path/to/profile.jpg"
+
+### Upload Product Images
+curl -X POST http://localhost:3000/market/products/{{product_id}}/images \
+  -H "Authorization: Bearer {{token}}" \
+  -F "images=@/path/to/image1.jpg" \
+  -F "images=@/path/to/image2.jpg" \
+  -F "images=@/path/to/image3.jpg"
+
+### Upload Document (Vendor)
+curl -X POST http://localhost:3000/market/vendors/documents \
+  -H "Authorization: Bearer {{token}}" \
+  -F "document=@/path/to/license.pdf" \
+  -F "documentType=business_license"
+
+# ================================
+# HEALTH CHECK AND UTILITY ENDPOINTS
+# ================================
+
+### Health Check
+curl -X GET http://localhost:3000/health \
+  -H "Content-Type: application/json"
+
+### Get API Version
+curl -X GET http://localhost:3000/version \
+  -H "Content-Type: application/json"
+
+# ================================
+# WEBHOOK ENDPOINTS (For External Services)
+# ================================
+
+### Razorpay Webhook
+curl -X POST http://localhost:3000/market/webhooks/razorpay \
+  -H "Content-Type: application/json" \
+  -H "X-Razorpay-Signature: webhook_signature" \
+  -d '{
+    "event": "payment.captured",
+    "payload": {
+      "payment": {
+        "entity": {
+          "id": "pay_xxxxxxxxxxxxx",
+          "order_id": "order_xxxxxxxxxxxxx",
+          "status": "captured",
+          "amount": 100000,
+          "notes": {
+            "orderId": "booking_id_here"
+          }
+        }
+      }
+    }
+  }'
+
+# ================================
+# EXAMPLE COMPLETE USER JOURNEY
+# ================================
+
+### 1. User Registration/Login
+# Send OTP
+curl -X POST http://localhost:3000/auth/send-otp \
+  -H "Content-Type: application/json" \
+  -d '{"phoneNumber": "9876543210"}'
+
+# Verify OTP
+curl -X POST http://localhost:3000/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "9876543210",
+    "verificationId": "verification_id",
+    "otpCode": "123456"
+  }'
+
+### 2. Browse Products
+curl -X GET "http://localhost:3000/market/products?category=HANDICRAFT&page=1&limit=10"
+
+### 3. View Product Details
+curl -X GET http://localhost:3000/market/products/{{product_id}}
+
+### 4. Create Order
+curl -X POST http://localhost:3000/market/orders \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [{"productId": "{{product_id}}", "quantity": 1, "unitPrice": 5000}],
+    "totalAmount": 5000
+  }'
+
+### 5. Create Payment
+curl -X POST http://localhost:3000/market/orders/{{order_id}}/payment/create \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerInfo": {
+      "name": "John Doe",
+      "phone": "9876543210"
+    }
+  }'
+
+### 6. Verify Payment
+curl -X POST http://localhost:3000/market/orders/{{order_id}}/payment/verify \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "razorpay_payment_id": "pay_xxxxx",
+    "razorpay_order_id": "order_xxxxx",
+    "razorpay_signature": "signature_xxxxx"
+  }'
+
+# ================================
+# VENDOR JOURNEY EXAMPLE
+# ================================
+
+### 1. Vendor Onboarding
+curl -X POST http://localhost:3000/market/vendors/onboard \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "businessName": "Kashmir Arts",
+    "ownerName": "Vendor Name",
+    "contactNumbers": ["9876543210"],
+    "email": "vendor@kashmirarts.com",
+    "businessAddress": "Srinagar, Kashmir",
+    "googleMapsLink": "https://maps.google.com/?q=34.0837,74.7973",
+    "gstNumber": "15ABCDE1234F1Z5",
+    "panNumber": "ABCDE1234F",
+    "aadhaarNumber": "123456789012",
+    "vendorType": "LOCAL_MARKET",
+    "shopName": "Kashmir Arts",
+    "bankDetails": {
+      "accountNumber": "1234567890",
+      "ifscCode": "SBIN0001234",
+      "bankName": "State Bank of India",
+      "branchName": "Srinagar Branch",
+      "accountHolder": "Vendor Name"
+    }
+  }'
+
+### 2. Add Products
+curl -X POST http://localhost:3000/market/products \
+  -H "Authorization: Bearer {{vendor_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productName": "Handmade Carpet",
+    "category": "HANDICRAFT",
+    "description": "Beautiful handwoven carpet",
+    "priceMin": 10000,
+    "priceMax": 50000,
+    "minOrderQuantity": 1,
+    "hasDelivery": true,
+    "deliveryAreas": ["Delhi", "Mumbai", "Bangalore"]
+  }'
+
+### 3. Manage Orders
+curl -X GET http://localhost:3000/market/vendors/orders \
+  -H "Authorization: Bearer {{vendor_token}}"
+
+### 4. Update Order Status
+curl -X PUT http://localhost:3000/market/orders/{{order_id}}/status \
+  -H "Authorization: Bearer {{vendor_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "CONFIRMED",
+    "notes": "Order confirmed and being prepared"
+  }'
+
+# ================================
+# NOTES
+# ================================
+# 1. Replace {{token}} with actual JWT tokens received from auth endpoints
+# 2. Replace {{product_id}}, {{order_id}}, {{vendor_id}} etc. with actual IDs
+# 3. Adjust URLs if running on different host/port
+# 4. Some endpoints require specific roles (ADMIN, VENDOR, CUSTOMER)
+# 5. File upload endpoints require multipart/form-data content type
+# 6. All monetary amounts are in INR (Indian Rupees)
+# 7. Phone numbers should be valid 10-digit Indian mobile numbers
+# 8. Timestamps are in ISO 8601 format
