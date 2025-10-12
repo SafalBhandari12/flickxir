@@ -89,7 +89,7 @@ export class VendorController {
             aadhaarNumber: vendorData.aadhaarNumber,
             vendorType: vendorData.vendorType,
             commissionRate:
-              vendorData.vendorType === "LOCAL_MARKET"
+              vendorData.vendorType === "PHARMACY"
                 ? COMMISSION_RATES.LOCAL_MARKET
                 : COMMISSION_RATES.DEFAULT,
             status: "PENDING",
@@ -108,18 +108,18 @@ export class VendorController {
           },
         });
 
-        // Create market profile if vendor type is LOCAL_MARKET
-        let marketProfile = null;
-        if (vendorData.vendorType === "LOCAL_MARKET" && vendorData.shopName) {
-          marketProfile = await tx.localMarketProfile.create({
+        // Create pharmacy profile if vendor type is PHARMACY
+        let pharmacyProfile = null;
+        if (vendorData.vendorType === "PHARMACY" && vendorData.shopName) {
+          pharmacyProfile = await tx.pharmacyProfile.create({
             data: {
               vendorId: vendor.id,
-              shopName: vendorData.shopName,
+              pharmacyName: vendorData.shopName,
             },
           });
         }
 
-        return { vendor, bankDetails, marketProfile };
+        return { vendor, bankDetails, pharmacyProfile };
       });
 
       res.status(201).json(
@@ -130,7 +130,7 @@ export class VendorController {
           vendorType: result.vendor.vendorType,
           status: result.vendor.status,
           commissionRate: result.vendor.commissionRate,
-          shopName: result.marketProfile?.shopName,
+          shopName: result.pharmacyProfile?.pharmacyName,
           createdAt: result.vendor.createdAt,
         })
       );
@@ -160,12 +160,12 @@ export class VendorController {
         where: { id: user.vendorId },
         include: {
           bankDetails: true,
-          marketProfile: {
+          pharmacyProfile: {
             include: {
               products: {
                 select: {
                   id: true,
-                  productName: true,
+                  medicineName: true,
                   category: true,
                   isAvailable: true,
                 },
@@ -199,11 +199,11 @@ export class VendorController {
         commissionRate: vendor.commissionRate,
         paymentFrequency: vendor.paymentFrequency,
         bankDetails: vendor.bankDetails,
-        marketProfile: vendor.marketProfile
+        pharmacyProfile: vendor.pharmacyProfile
           ? {
-              shopName: vendor.marketProfile.shopName,
-              totalProducts: vendor.marketProfile.products.length,
-              recentProducts: vendor.marketProfile.products,
+              pharmacyName: vendor.pharmacyProfile.pharmacyName,
+              totalProducts: vendor.pharmacyProfile.products.length,
+              recentProducts: vendor.pharmacyProfile.products,
             }
           : null,
         createdAt: vendor.createdAt,
@@ -339,9 +339,9 @@ export class VendorController {
                 phoneNumber: true,
               },
             },
-            marketProfile: {
+            pharmacyProfile: {
               select: {
-                shopName: true,
+                pharmacyName: true,
                 _count: {
                   select: { products: true },
                 },
@@ -366,8 +366,8 @@ export class VendorController {
         vendorType: vendor.vendorType,
         status: vendor.status,
         commissionRate: vendor.commissionRate,
-        shopName: vendor.marketProfile?.shopName,
-        totalProducts: vendor.marketProfile?._count?.products || 0,
+        shopName: vendor.pharmacyProfile?.pharmacyName,
+        totalProducts: vendor.pharmacyProfile?._count?.products || 0,
         totalOrders: vendor._count.bookings,
         createdAt: vendor.createdAt,
       }));
@@ -497,13 +497,13 @@ export class VendorController {
       const vendor = await prisma.vendor.findUnique({
         where: { id },
         include: {
-          marketProfile: {
+          pharmacyProfile: {
             include: {
               products: {
                 where: { isAvailable: true },
                 select: {
                   id: true,
-                  productName: true,
+                  medicineName: true,
                   category: true,
                   priceMin: true,
                   priceMax: true,
@@ -534,10 +534,10 @@ export class VendorController {
         contactNumbers: vendor.contactNumbers,
         googleMapsLink: vendor.googleMapsLink,
         vendorType: vendor.vendorType,
-        marketProfile: vendor.marketProfile
+        pharmacyProfile: vendor.pharmacyProfile
           ? {
-              shopName: vendor.marketProfile.shopName,
-              products: vendor.marketProfile.products,
+              pharmacyName: vendor.pharmacyProfile.pharmacyName,
+              products: vendor.pharmacyProfile.products,
             }
           : null,
         createdAt: vendor.createdAt,

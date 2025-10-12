@@ -65,7 +65,7 @@ export class OrderController {
           isAvailable: true,
         },
         include: {
-          localMarketProfile: {
+          pharmacyProfile: {
             include: {
               vendor: {
                 select: {
@@ -88,7 +88,7 @@ export class OrderController {
 
       // Validate all products belong to the same vendor
       const vendorIds = [
-        ...new Set(products.map((p) => p.localMarketProfile.vendor.id)),
+        ...new Set(products.map((p) => p.pharmacyProfile.vendor.id)),
       ];
       if (vendorIds.length > 1) {
         return res
@@ -100,7 +100,7 @@ export class OrderController {
           );
       }
 
-      const vendor = products[0]?.localMarketProfile?.vendor;
+      const vendor = products[0]?.pharmacyProfile?.vendor;
       if (!vendor) {
         return res.status(400).json(createErrorResponse("Invalid vendor data"));
       }
@@ -131,7 +131,7 @@ export class OrderController {
             .status(400)
             .json(
               createErrorResponse(
-                `Minimum order quantity for ${product.productName} is ${product.minOrderQuantity}`
+                `Minimum order quantity for ${product.medicineName} is ${product.minOrderQuantity}`
               )
             );
         }
@@ -145,7 +145,7 @@ export class OrderController {
             .status(400)
             .json(
               createErrorResponse(
-                `Invalid price for ${product.productName}. Price should be between ₹${product.priceMin} and ₹${product.priceMax}`
+                `Invalid price for ${product.medicineName}. Price should be between ₹${product.priceMin} and ₹${product.priceMax}`
               )
             );
         }
@@ -187,22 +187,22 @@ export class OrderController {
           data: {
             userId: user.userId,
             vendorId: vendor.id,
-            bookingType: "LOCAL_MARKET",
+            bookingType: "PHARMACY",
             totalAmount: calculatedTotal,
             commissionAmount,
             status: "PENDING",
           },
         });
 
-        // Create market booking items
-        const marketBookings = await Promise.all(
+        // Create pharmacy booking items
+        const pharmacyBookings = await Promise.all(
           validatedItems.map((item) =>
-            tx.marketBooking.create({
+            tx.pharmacyBooking.create({
               data: {
                 bookingId: booking.id,
-                localMarketProfileId: products.find(
+                pharmacyProfileId: products.find(
                   (p) => p.id === item.productId
-                )!.localMarketProfileId,
+                )!.pharmacyProfileId,
                 productId: item.productId,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
@@ -228,7 +228,7 @@ export class OrderController {
           },
         });
 
-        return { booking, marketBookings, payment };
+        return { booking, pharmacyBookings, payment };
       });
 
       // Create Razorpay order if payment method is RAZORPAY
@@ -313,7 +313,7 @@ export class OrderController {
 
       const where: any = {
         userId: user.userId,
-        bookingType: "LOCAL_MARKET",
+        bookingType: "PHARMACY",
       };
 
       if (status) {
@@ -333,11 +333,11 @@ export class OrderController {
                 contactNumbers: true,
               },
             },
-            marketBooking: {
+            pharmacyBooking: {
               include: {
                 product: {
                   select: {
-                    productName: true,
+                    medicineName: true,
                     category: true,
                   },
                 },
@@ -364,9 +364,9 @@ export class OrderController {
           businessName: order.vendor.businessName,
           contactNumbers: order.vendor.contactNumbers,
         },
-        items: order.marketBooking.map((item) => ({
+        items: order.pharmacyBooking.map((item) => ({
           id: item.id,
-          productName: item.product.productName,
+          productName: item.product.medicineName,
           category: item.product.category,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -433,11 +433,11 @@ export class OrderController {
                 phoneNumber: true,
               },
             },
-            marketBooking: {
+            pharmacyBooking: {
               include: {
                 product: {
                   select: {
-                    productName: true,
+                    medicineName: true,
                     category: true,
                   },
                 },
@@ -463,9 +463,9 @@ export class OrderController {
         customer: {
           phoneNumber: order.user.phoneNumber,
         },
-        items: order.marketBooking.map((item) => ({
+        items: order.pharmacyBooking.map((item) => ({
           id: item.id,
-          productName: item.product.productName,
+          productName: item.product.medicineName,
           category: item.product.category,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -534,11 +534,11 @@ export class OrderController {
               businessAddress: true,
             },
           },
-          marketBooking: {
+          pharmacyBooking: {
             include: {
               product: {
                 select: {
-                  productName: true,
+                  medicineName: true,
                   category: true,
                 },
               },
@@ -568,9 +568,9 @@ export class OrderController {
           contactNumbers: order.vendor.contactNumbers,
           businessAddress: order.vendor.businessAddress,
         },
-        items: order.marketBooking.map((item) => ({
+        items: order.pharmacyBooking.map((item) => ({
           id: item.id,
-          productName: item.product.productName,
+          productName: item.product.medicineName,
           category: item.product.category,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -661,8 +661,8 @@ export class OrderController {
           data: { status },
         });
 
-        // Update market booking items
-        await tx.marketBooking.updateMany({
+        // Update pharmacy booking items
+        await tx.pharmacyBooking.updateMany({
           where: { bookingId: id },
           data: { status },
         });
@@ -762,8 +762,8 @@ export class OrderController {
           data: { status: "CANCELLED" },
         });
 
-        // Update market booking items
-        await tx.marketBooking.updateMany({
+        // Update pharmacy booking items
+        await tx.pharmacyBooking.updateMany({
           where: { bookingId: id },
           data: { status: "CANCELLED" },
         });

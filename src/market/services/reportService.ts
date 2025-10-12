@@ -188,9 +188,9 @@ export class ReportService {
           take: 10,
           include: {
             user: { select: { phoneNumber: true } },
-            marketBooking: {
+            pharmacyBooking: {
               include: {
-                product: { select: { productName: true } },
+                product: { select: { medicineName: true } },
               },
             },
           },
@@ -202,7 +202,7 @@ export class ReportService {
         totalAmount: order.totalAmount,
         status: order.status,
         createdAt: order.createdAt,
-        itemCount: order.marketBooking.length,
+        itemCount: order.pharmacyBooking.length,
         vendorName: "", // Will be filled by the vendor's own name
       }));
 
@@ -244,7 +244,7 @@ export class ReportService {
         where: whereClause,
         include: {
           payment: true,
-          marketBooking: {
+          pharmacyBooking: {
             include: {
               product: { select: { category: true } },
             },
@@ -273,7 +273,7 @@ export class ReportService {
       // Category breakdown
       const categoryData: Record<string, number> = {};
       orders.forEach((order) => {
-        order.marketBooking.forEach((item) => {
+        order.pharmacyBooking.forEach((item) => {
           const category = item.product.category;
           categoryData[category] = (categoryData[category] || 0) + 1;
         });
@@ -314,13 +314,13 @@ export class ReportService {
     try {
       const whereClause: any = {};
       if (vendorId) {
-        whereClause.localMarketProfile = { vendorId };
+        whereClause.pharmacyProfile = { vendorId };
       }
 
       const products = await prisma.product.findMany({
         where: whereClause,
         include: {
-          localMarketProfile: {
+          pharmacyProfile: {
             include: { vendor: { select: { businessName: true } } },
           },
           bookings: {
@@ -344,9 +344,9 @@ export class ReportService {
 
         return {
           productId: product.id,
-          productName: product.productName,
+          productName: product.medicineName,
           category: product.category,
-          vendorName: product.localMarketProfile.vendor.businessName,
+          vendorName: product.pharmacyProfile.vendor.businessName,
           totalQuantitySold: totalQuantity,
           totalRevenue,
           orderCount,
@@ -378,7 +378,7 @@ export class ReportService {
             where: { status: { not: "CANCELLED" } },
             include: { payment: true },
           },
-          marketProfile: {
+          pharmacyProfile: {
             include: {
               products: { select: { id: true, isAvailable: true } },
             },
@@ -398,9 +398,9 @@ export class ReportService {
         );
         const orderCount = vendor.bookings.length;
         const activeProducts =
-          vendor.marketProfile?.products.filter((p) => p.isAvailable).length ||
-          0;
-        const totalProducts = vendor.marketProfile?.products.length || 0;
+          vendor.pharmacyProfile?.products.filter((p) => p.isAvailable)
+            .length || 0;
+        const totalProducts = vendor.pharmacyProfile?.products.length || 0;
 
         return {
           vendorId: vendor.id,
@@ -525,9 +525,9 @@ export class ReportService {
           user: { select: { phoneNumber: true } },
           vendor: { select: { businessName: true } },
           payment: { select: { paymentStatus: true, paymentMethod: true } },
-          marketBooking: {
+          pharmacyBooking: {
             include: {
-              product: { select: { productName: true, category: true } },
+              product: { select: { medicineName: true, category: true } },
             },
           },
         },
@@ -543,9 +543,9 @@ export class ReportService {
         status: order.status,
         paymentStatus: order.payment?.paymentStatus || "PENDING",
         paymentMethod: order.payment?.paymentMethod || "",
-        itemCount: order.marketBooking.length,
-        products: order.marketBooking.map((item) => ({
-          name: item.product.productName,
+        itemCount: order.pharmacyBooking.length,
+        products: order.pharmacyBooking.map((item) => ({
+          name: item.product.medicineName,
           category: item.product.category,
           quantity: item.quantity,
           unitPrice: item.unitPrice,

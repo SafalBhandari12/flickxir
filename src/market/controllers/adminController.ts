@@ -146,7 +146,7 @@ export class AdminController {
       const skip = (page - 1) * limit;
 
       const where: any = {
-        bookingType: "LOCAL_MARKET",
+        bookingType: "PHARMACY",
       };
 
       if (status) {
@@ -178,7 +178,7 @@ export class AdminController {
             },
             _count: {
               select: {
-                marketBooking: true,
+                pharmacyBooking: true,
               },
             },
           },
@@ -193,7 +193,7 @@ export class AdminController {
         totalAmount: order.totalAmount,
         commissionAmount: order.commissionAmount,
         status: order.status,
-        itemCount: order._count.marketBooking,
+        itemCount: order._count.pharmacyBooking,
         paymentStatus: order.payment?.paymentStatus,
         paymentMethod: order.payment?.paymentMethod,
         createdAt: order.createdAt,

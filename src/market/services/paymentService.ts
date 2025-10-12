@@ -109,7 +109,7 @@ export class PaymentService {
       });
 
       // Update order items status
-      await prisma.marketBooking.updateMany({
+      await prisma.pharmacyBooking.updateMany({
         where: { bookingId },
         data: { status: "CONFIRMED" },
       });
@@ -146,7 +146,7 @@ export class PaymentService {
       });
 
       // Update order items status
-      await prisma.marketBooking.updateMany({
+      await prisma.pharmacyBooking.updateMany({
         where: { bookingId },
         data: { status: "CANCELLED" },
       });

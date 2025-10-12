@@ -82,29 +82,41 @@ export const UPLOAD_LIMITS = {
 // ================================
 
 export const PRODUCT_CATEGORIES = {
-  [ProductCategory.HANDICRAFT]: {
-    label: "Handicrafts",
-    description: "Traditional handmade crafts and artwork",
+  [ProductCategory.PRESCRIPTION_MEDICINE]: {
+    label: "Prescription Medicine",
+    description: "Prescription drugs requiring doctor's prescription",
   },
-  [ProductCategory.SAFFRON]: {
-    label: "Saffron",
-    description: "Premium quality saffron and saffron products",
+  [ProductCategory.OTC_MEDICINE]: {
+    label: "Over-the-Counter Medicine",
+    description: "Non-prescription medicines and supplements",
   },
-  [ProductCategory.DRY_FRUITS]: {
-    label: "Dry Fruits",
-    description: "Premium nuts and dried fruits",
+  [ProductCategory.HEALTH_SUPPLEMENTS]: {
+    label: "Health Supplements",
+    description: "Vitamins, minerals, and nutritional supplements",
   },
-  [ProductCategory.WOOLENS]: {
-    label: "Woolens",
-    description: "Traditional woolen garments and accessories",
+  [ProductCategory.MEDICAL_DEVICES]: {
+    label: "Medical Devices",
+    description: "Medical equipment and diagnostic devices",
   },
-  [ProductCategory.WOODWORK]: {
-    label: "Woodwork",
-    description: "Handcrafted wooden items and furniture",
+  [ProductCategory.PERSONAL_CARE]: {
+    label: "Personal Care",
+    description: "Personal hygiene and beauty products",
+  },
+  [ProductCategory.BABY_CARE]: {
+    label: "Baby Care",
+    description: "Baby care products and infant supplies",
+  },
+  [ProductCategory.FITNESS_WELLNESS]: {
+    label: "Fitness & Wellness",
+    description: "Fitness equipment and wellness products",
+  },
+  [ProductCategory.AYURVEDIC_HERBAL]: {
+    label: "Ayurvedic & Herbal",
+    description: "Traditional ayurvedic and herbal medicines",
   },
   [ProductCategory.OTHER]: {
     label: "Other",
-    description: "Other local products and specialties",
+    description: "Other pharmacy and health products",
   },
 } as const;
 

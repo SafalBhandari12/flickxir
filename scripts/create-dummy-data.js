@@ -8,96 +8,33 @@ const dummyUsers = [
   { phoneNumber: "9876543211", role: "CUSTOMER" },
   { phoneNumber: "9876543212", role: "CUSTOMER" },
   { phoneNumber: "9876543213", role: "CUSTOMER" },
-  { phoneNumber: "9876543214", role: "VENDOR" },
-  { phoneNumber: "9876543215", role: "VENDOR" },
+  { phoneNumber: "9876543214", role: "VENDOR" }, // Local market vendor
+  { phoneNumber: "9876543215", role: "CUSTOMER" },
   { phoneNumber: "9876543216", role: "CUSTOMER" },
   { phoneNumber: "9876543217", role: "CUSTOMER" },
-  { phoneNumber: "9876543218", role: "VENDOR" }, // Added for transport vendor
 ];
 
 const dummyVendors = [
   {
     phoneNumber: "9876543214",
-    businessName: "Himalayan Adventures",
-    ownerName: "Ram Bahadur",
+    businessName: "HealthCare Pharmacy",
+    ownerName: "Dr. Rajesh Kumar",
     contactNumbers: ["9876543214"],
-    email: "ram@himalayanadventures.com",
-    businessAddress: "Pokhara-8, Lakeside",
-    googleMapsLink: "https://maps.google.com/himalayan-adventures",
-    gstNumber: "27ABCDE1234F1Z1",
-    panNumber: "QWERT1234B",
-    aadhaarNumber: "903456781235",
-    vendorType: "ADVENTURE", // Changed from TOUR_OPERATOR
+    email: "rajesh@healthcarepharmacy.com",
+    businessAddress:
+      "Medical Complex, Lal Chowk, Srinagar, Jammu & Kashmir 190001",
+    googleMapsLink: "https://maps.google.com/healthcare-pharmacy",
+    gstNumber: "01ABCDE1234F1Z1",
+    panNumber: "RAJKM1234A",
+    aadhaarNumber: "123456789012",
+    vendorType: "PHARMACY",
     status: "APPROVED",
     bankDetails: {
-      accountNumber: "12345671",
-      ifscCode: "HDFC0ABCD11",
-      bankName: "HDFC Bank",
-      branchName: "Pokhara Branch",
-      accountHolder: "Ram Bahadur",
-    },
-  },
-  {
-    phoneNumber: "9876543215",
-    businessName: "Hotel Mountain View",
-    ownerName: "Sita Sharma",
-    contactNumbers: ["9876543215"],
-    email: "sita@hotelmountainview.com",
-    businessAddress: "Kathmandu-3, Thamel",
-    googleMapsLink: "https://maps.google.com/hotel-mountain-view",
-    gstNumber: "27ABCDE1234F1Z2",
-    panNumber: "QWERT1234C",
-    aadhaarNumber: "903456781236",
-    vendorType: "HOTEL",
-    status: "APPROVED",
-    bankDetails: {
-      accountNumber: "12345672",
-      ifscCode: "HDFC0ABCD12",
-      bankName: "HDFC Bank",
-      branchName: "Thamel Branch",
-      accountHolder: "Sita Sharma",
-    },
-  },
-  {
-    phoneNumber: "9876543216",
-    businessName: "Dal Bhat Restaurant",
-    ownerName: "Krishna Thapa",
-    contactNumbers: ["9876543216"],
-    email: "krishna@dalbhatrestaurant.com",
-    businessAddress: "Chitwan-1, Sauraha",
-    googleMapsLink: "https://maps.google.com/dal-bhat-restaurant",
-    gstNumber: "27ABCDE1234F1Z3",
-    panNumber: "QWERT1234D",
-    aadhaarNumber: "903456781237",
-    vendorType: "LOCAL_MARKET", // Changed from RESTAURANT
-    status: "PENDING",
-    bankDetails: {
-      accountNumber: "12345673",
-      ifscCode: "HDFC0ABCD13",
-      bankName: "HDFC Bank",
-      branchName: "Chitwan Branch",
-      accountHolder: "Krishna Thapa",
-    },
-  },
-  {
-    phoneNumber: "9876543218",
-    businessName: "Kashmir Transport Services",
-    ownerName: "Ajay Kumar",
-    contactNumbers: ["9876543218"],
-    email: "ajay@kashmirtransport.com",
-    businessAddress: "Srinagar-2, Dal Lake",
-    googleMapsLink: "https://maps.google.com/kashmir-transport",
-    gstNumber: "27ABCDE1234F1Z4",
-    panNumber: "QWERT1234E",
-    aadhaarNumber: "903456781238",
-    vendorType: "TRANSPORT",
-    status: "APPROVED",
-    bankDetails: {
-      accountNumber: "12345674",
-      ifscCode: "HDFC0ABCD14",
-      bankName: "HDFC Bank",
-      branchName: "Srinagar Branch",
-      accountHolder: "Ajay Kumar",
+      accountNumber: "12345678901",
+      ifscCode: "SBIN0001234",
+      bankName: "State Bank of India",
+      branchName: "Lal Chowk Branch",
+      accountHolder: "Dr. Rajesh Kumar",
     },
   },
 ];
@@ -113,6 +50,100 @@ const dummyAdmins = [
       "MANAGE_BOOKINGS",
       "SYSTEM_ADMIN",
     ],
+  },
+];
+
+const dummyProducts = [
+  {
+    medicineName: "Paracetamol",
+    brandName: "Crocin",
+    category: "OTC_MEDICINE",
+    description:
+      "Pain reliever and fever reducer. Safe for all ages when used as directed.",
+    composition: "Paracetamol 500mg",
+    manufacturer: "GSK Pharmaceuticals",
+    priceMin: 15,
+    priceMax: 25,
+    minOrderQuantity: 1,
+    packSize: "15 tablets",
+    dosageForm: "Tablet",
+    requiresPrescription: false,
+    hasDelivery: true,
+    deliveryAreas: ["Srinagar", "Delhi", "Mumbai", "Bangalore", "Kolkata"],
+    certifications: ["CDSCO Approved", "WHO-GMP Certified"],
+    stockQuantity: 100,
+  },
+  {
+    medicineName: "Amoxicillin",
+    brandName: "Amoxil",
+    category: "PRESCRIPTION_MEDICINE",
+    description: "Antibiotic used to treat bacterial infections.",
+    composition: "Amoxicillin 500mg",
+    manufacturer: "Cipla Ltd",
+    priceMin: 120,
+    priceMax: 150,
+    minOrderQuantity: 1,
+    packSize: "10 capsules",
+    dosageForm: "Capsule",
+    requiresPrescription: true,
+    hasDelivery: true,
+    deliveryAreas: ["Srinagar", "Delhi", "Mumbai", "Bangalore", "Pune"],
+    certifications: ["CDSCO Approved", "ISO Certified"],
+    stockQuantity: 50,
+  },
+  {
+    medicineName: "Vitamin D3",
+    brandName: "Calcirol",
+    category: "HEALTH_SUPPLEMENTS",
+    description: "Vitamin D3 supplement for bone health and immunity.",
+    composition: "Cholecalciferol 60,000 IU",
+    manufacturer: "Cadila Healthcare",
+    priceMin: 80,
+    priceMax: 120,
+    minOrderQuantity: 1,
+    packSize: "4 sachets",
+    dosageForm: "Granules",
+    requiresPrescription: false,
+    hasDelivery: true,
+    deliveryAreas: ["Srinagar", "Delhi", "Mumbai"],
+    certifications: ["FSSAI Approved", "GMP Certified"],
+    stockQuantity: 75,
+  },
+  {
+    medicineName: "Digital Thermometer",
+    brandName: "Omron",
+    category: "MEDICAL_DEVICES",
+    description: "Digital thermometer for accurate temperature measurement.",
+    composition: "Electronic device with LCD display",
+    manufacturer: "Omron Healthcare",
+    priceMin: 200,
+    priceMax: 350,
+    minOrderQuantity: 1,
+    packSize: "1 piece",
+    dosageForm: "Device",
+    requiresPrescription: false,
+    hasDelivery: true,
+    deliveryAreas: ["Srinagar", "Delhi"],
+    certifications: ["CE Marked", "FDA Approved"],
+    stockQuantity: 25,
+  },
+  {
+    medicineName: "Baby Lotion",
+    brandName: "Johnson's",
+    category: "BABY_CARE",
+    description: "Gentle moisturizing lotion for baby's delicate skin.",
+    composition: "Glycerin, Mineral Oil, Dimethicone",
+    manufacturer: "Johnson & Johnson",
+    priceMin: 150,
+    priceMax: 200,
+    minOrderQuantity: 1,
+    packSize: "200ml",
+    dosageForm: "Lotion",
+    requiresPrescription: false,
+    hasDelivery: true,
+    deliveryAreas: ["Srinagar", "Delhi"],
+    certifications: ["Dermatologically Tested", "Hypoallergenic"],
+    stockQuantity: 40,
   },
 ];
 
@@ -260,6 +291,37 @@ async function createDummyData() {
           },
         });
 
+        // Create PharmacyProfile for PHARMACY vendors
+        if (
+          vendorData.vendorType === "PHARMACY" &&
+          vendorData.status === "APPROVED"
+        ) {
+          try {
+            const pharmacyProfile = await prisma.pharmacyProfile.create({
+              data: {
+                vendorId: vendor.id,
+                pharmacyName: vendorData.businessName,
+                licenseNumber: "DL-" + vendorData.gstNumber.substring(0, 10),
+                gstNumber: vendorData.gstNumber,
+                operatingHours: "9:00 AM - 10:00 PM",
+                servicesOffered: [
+                  "Home Delivery",
+                  "Online Consultation",
+                  "Prescription Verification",
+                ],
+              },
+            });
+            console.log(
+              `✅ Created pharmacy profile for vendor: ${vendor.businessName}`
+            );
+          } catch (error) {
+            console.error(
+              `❌ Error creating pharmacy profile for ${vendor.businessName}:`,
+              error.message
+            );
+          }
+        }
+
         console.log(
           `✅ Created vendor: ${vendor.businessName} (${vendor.status})`
         );
@@ -271,24 +333,80 @@ async function createDummyData() {
       }
     }
 
+    // Create Medicines for Pharmacy Vendor
+    console.log("� Creating medicines for pharmacy vendor...");
+    try {
+      // Find the approved pharmacy vendor
+      const pharmacyVendor = await prisma.vendor.findFirst({
+        where: {
+          vendorType: "PHARMACY",
+          status: "APPROVED",
+        },
+        include: {
+          pharmacyProfile: true,
+        },
+      });
+
+      if (pharmacyVendor && pharmacyVendor.pharmacyProfile) {
+        for (const productData of dummyProducts) {
+          try {
+            const product = await prisma.product.create({
+              data: {
+                pharmacyProfileId: pharmacyVendor.pharmacyProfile.id,
+                medicineName: productData.medicineName,
+                brandName: productData.brandName,
+                category: productData.category,
+                description: productData.description,
+                composition: productData.composition,
+                manufacturer: productData.manufacturer,
+                priceMin: productData.priceMin,
+                priceMax: productData.priceMax,
+                minOrderQuantity: productData.minOrderQuantity,
+                packSize: productData.packSize,
+                dosageForm: productData.dosageForm,
+                requiresPrescription: productData.requiresPrescription,
+                hasDelivery: productData.hasDelivery,
+                deliveryAreas: productData.deliveryAreas,
+                certifications: productData.certifications,
+                stockQuantity: productData.stockQuantity,
+                isAvailable: true,
+              },
+            });
+            console.log(`✅ Created medicine: ${product.medicineName}`);
+          } catch (error) {
+            console.error(
+              `❌ Error creating medicine ${productData.medicineName}:`,
+              error.message
+            );
+          }
+        }
+      } else {
+        console.log(
+          "⚠️ No approved pharmacy vendor found or vendor doesn't have pharmacy profile, skipping medicines creation"
+        );
+      }
+    } catch (error) {
+      console.error("❌ Error creating medicines:", error.message);
+    }
+
     // Display summary
     console.log("\n📊 Data Creation Summary:");
     const userCount = await prisma.user.count();
     const vendorCount = await prisma.vendor.count();
     const adminCount = await prisma.admin.count();
+    const productCount = await prisma.product.count();
 
     console.log(`👥 Total Users: ${userCount}`);
     console.log(`🏪 Total Vendors: ${vendorCount}`);
     console.log(`👑 Total Admins: ${adminCount}`);
+    console.log(`� Total Medicines: ${productCount}`);
 
     // Show test credentials
     console.log("\n🔑 Test Credentials:");
     console.log("📱 Admin Login: 9876543210 (bypasses OTP)");
+    console.log("📱 Pharmacy Vendor Login: 9876543214");
     console.log(
-      "📱 Vendor Login: 9876543214 (Adventure), 9876543215 (Hotel), 9876543218 (Transport)"
-    );
-    console.log(
-      "📱 Customer Login: 9876543211, 9876543212, 9876543213, 9876543216, 9876543217"
+      "📱 Customer Login: 9876543211, 9876543212, 9876543213, 9876543215, 9876543216, 9876543217"
     );
     console.log("\n✨ Dummy data creation completed successfully!");
   } catch (error) {

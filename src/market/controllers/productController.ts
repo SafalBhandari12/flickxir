@@ -42,7 +42,7 @@ export class ProductController {
       // Check if vendor is approved
       const vendor = await prisma.vendor.findUnique({
         where: { id: user.vendorId },
-        include: { marketProfile: true },
+        include: { pharmacyProfile: true },
       });
 
       if (!vendor || vendor.status !== "APPROVED") {
@@ -51,10 +51,10 @@ export class ProductController {
           .json(createErrorResponse(API_MESSAGES.ERROR.VENDOR_NOT_APPROVED));
       }
 
-      if (!vendor.marketProfile) {
+      if (!vendor.pharmacyProfile) {
         return res
           .status(400)
-          .json(createErrorResponse("Vendor does not have a market profile"));
+          .json(createErrorResponse("Vendor does not have a pharmacy profile"));
       }
 
       // Validate request data
@@ -84,7 +84,7 @@ export class ProductController {
             vendorId: user.vendorId,
             imageUrl: img.url,
             imageType: "product",
-            description: `Product image for ${productData.productName}`,
+            description: `Product image for ${productData.medicineName}`,
             isPrimary: false,
           }));
           // Set first image as primary
@@ -102,8 +102,8 @@ export class ProductController {
       // Create product
       const product = await prisma.product.create({
         data: {
-          localMarketProfileId: vendor.marketProfile.id,
-          productName: productData.productName,
+          pharmacyProfileId: vendor.pharmacyProfile.id,
+          medicineName: productData.medicineName,
           category: productData.category,
           description: productData.description ?? null,
           priceMin: productData.priceMin,
@@ -139,7 +139,7 @@ export class ProductController {
       res.status(201).json(
         createSuccessResponse(API_MESSAGES.SUCCESS.PRODUCT_CREATED, {
           id: product.id,
-          productName: product.productName,
+          productName: product.medicineName,
           category: product.category,
           description: product.description,
           priceMin: product.priceMin,
@@ -207,7 +207,7 @@ export class ProductController {
           take,
           orderBy: { createdAt: "desc" },
           include: {
-            localMarketProfile: {
+            pharmacyProfile: {
               include: {
                 vendor: {
                   select: {
@@ -254,7 +254,7 @@ export class ProductController {
 
         return {
           id: product.id,
-          productName: product.productName,
+          productName: product.medicineName,
           category: product.category,
           description: product.description,
           priceMin: product.priceMin,
@@ -265,10 +265,10 @@ export class ProductController {
           certifications: product.certifications,
           isAvailable: product.isAvailable,
           vendor: {
-            id: product.localMarketProfile.vendor.id,
-            businessName: product.localMarketProfile.vendor.businessName,
-            businessAddress: product.localMarketProfile.vendor.businessAddress,
-            contactNumbers: product.localMarketProfile.vendor.contactNumbers,
+            id: product.pharmacyProfile.vendor.id,
+            businessName: product.pharmacyProfile.vendor.businessName,
+            businessAddress: product.pharmacyProfile.vendor.businessAddress,
+            contactNumbers: product.pharmacyProfile.vendor.contactNumbers,
           },
           images: productImageList.map((img) => ({
             id: img.id,
@@ -311,7 +311,7 @@ export class ProductController {
       const product = await prisma.product.findUnique({
         where: { id },
         include: {
-          localMarketProfile: {
+          pharmacyProfile: {
             include: {
               vendor: {
                 select: {
@@ -358,7 +358,7 @@ export class ProductController {
 
       const formattedProduct = {
         id: product.id,
-        productName: product.productName,
+        productName: product.medicineName,
         category: product.category,
         description: product.description,
         priceMin: product.priceMin,
@@ -369,11 +369,11 @@ export class ProductController {
         certifications: product.certifications,
         isAvailable: product.isAvailable,
         vendor: {
-          id: product.localMarketProfile.vendor.id,
-          businessName: product.localMarketProfile.vendor.businessName,
-          businessAddress: product.localMarketProfile.vendor.businessAddress,
-          contactNumbers: product.localMarketProfile.vendor.contactNumbers,
-          googleMapsLink: product.localMarketProfile.vendor.googleMapsLink,
+          id: product.pharmacyProfile.vendor.id,
+          businessName: product.pharmacyProfile.vendor.businessName,
+          businessAddress: product.pharmacyProfile.vendor.businessAddress,
+          contactNumbers: product.pharmacyProfile.vendor.contactNumbers,
+          googleMapsLink: product.pharmacyProfile.vendor.googleMapsLink,
         },
         images: productImages.map((img) => ({
           id: img.id,
@@ -414,28 +414,28 @@ export class ProductController {
       const limit = parseInt(req.query.limit as string) || 10;
       const { skip, take } = getPaginationParams(page, limit);
 
-      // Get vendor's market profile
+      // Get vendor's pharmacy profile
       const vendor = await prisma.vendor.findUnique({
         where: { id: user.vendorId },
-        include: { marketProfile: true },
+        include: { pharmacyProfile: true },
       });
 
-      if (!vendor?.marketProfile) {
+      if (!vendor?.pharmacyProfile) {
         return res
           .status(400)
-          .json(createErrorResponse("Vendor does not have a market profile"));
+          .json(createErrorResponse("Vendor does not have a pharmacy profile"));
       }
 
       // Get products
       const [products, total] = await Promise.all([
         prisma.product.findMany({
-          where: { localMarketProfileId: vendor.marketProfile.id },
+          where: { pharmacyProfileId: vendor.pharmacyProfile.id },
           skip,
           take,
           orderBy: { createdAt: "desc" },
         }),
         prisma.product.count({
-          where: { localMarketProfileId: vendor.marketProfile.id },
+          where: { pharmacyProfileId: vendor.pharmacyProfile.id },
         }),
       ]);
 
@@ -494,7 +494,7 @@ export class ProductController {
       const product = await prisma.product.findFirst({
         where: {
           id,
-          localMarketProfile: {
+          pharmacyProfile: {
             vendorId: user.vendorId,
           },
         },
@@ -560,7 +560,7 @@ export class ProductController {
       const product = await prisma.product.findFirst({
         where: {
           id,
-          localMarketProfile: {
+          pharmacyProfile: {
             vendorId: user.vendorId,
           },
         },
@@ -573,7 +573,7 @@ export class ProductController {
       }
 
       // Check if product has active orders
-      const activeOrders = await prisma.marketBooking.count({
+      const activeOrders = await prisma.pharmacyBooking.count({
         where: {
           productId: id,
           status: { in: ["PENDING", "CONFIRMED"] },
@@ -626,7 +626,7 @@ export class ProductController {
       const product = await prisma.product.findFirst({
         where: {
           id,
-          localMarketProfile: {
+          pharmacyProfile: {
             vendorId: user.vendorId,
           },
         },
@@ -723,7 +723,7 @@ export class ProductController {
       const product = await prisma.product.findFirst({
         where: {
           id: productId,
-          localMarketProfile: {
+          pharmacyProfile: {
             vendorId: user.vendorId!,
           },
         },
@@ -748,7 +748,7 @@ export class ProductController {
           vendorId: user.vendorId!,
           imageUrl: img.url,
           imageType: "product",
-          description: `Product image for ${product.productName} - Product ID: ${productId}`,
+          description: `Product image for ${product.medicineName} - Product ID: ${productId}`,
           isPrimary: false,
         }));
 
@@ -810,7 +810,7 @@ export class ProductController {
       const product = await prisma.product.findFirst({
         where: {
           id: productId,
-          localMarketProfile: {
+          pharmacyProfile: {
             vendorId: user.vendorId!,
           },
         },

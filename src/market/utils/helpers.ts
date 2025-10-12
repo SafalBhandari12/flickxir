@@ -183,7 +183,7 @@ export function calculateCommission(
   vendorType: VendorType
 ): number {
   const rate =
-    vendorType === VendorType.LOCAL_MARKET
+    vendorType === VendorType.PHARMACY
       ? COMMISSION_RATES.LOCAL_MARKET
       : COMMISSION_RATES.DEFAULT;
 

@@ -24,10 +24,11 @@ enum UserRole {
 }
 
 enum VendorType {
-  HOTEL
-  ADVENTURE
-  TRANSPORT
-  LOCAL_MARKET
+  PHARMACY
+  MEDICAL_STORE
+  HOSPITAL_PHARMACY
+  ONLINE_PHARMACY
+  WELLNESS_STORE
   OTHER
 }
 
@@ -71,11 +72,14 @@ enum ActivityType {
 }
 
 enum ProductCategory {
-  HANDICRAFT
-  SAFFRON
-  DRY_FRUITS
-  WOOLENS
-  WOODWORK
+  PRESCRIPTION_MEDICINE
+  OTC_MEDICINE
+  HEALTH_SUPPLEMENTS
+  MEDICAL_DEVICES
+  PERSONAL_CARE
+  BABY_CARE
+  FITNESS_WELLNESS
+  AYURVEDIC_HERBAL
   OTHER
 }
 
@@ -203,7 +207,7 @@ model Vendor {
   hotelProfile     HotelProfile?
   adventureProfile AdventureProfile?
   transportProfile TransportProfile?
-  marketProfile    LocalMarketProfile?
+  pharmacyProfile  PharmacyProfile?
 
   // Business operations
   bookings    Booking[]
@@ -461,63 +465,77 @@ model TransportBooking {
 }
 
 // ================================
-// LOCAL MARKET PROFILE
+// PHARMACY PROFILE
 // ================================
 
-model LocalMarketProfile {
-  id        String   @id @default(cuid())
-  vendorId  String   @unique
-  shopName  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model PharmacyProfile {
+  id               String   @id @default(cuid())
+  vendorId         String   @unique
+  pharmacyName     String   // Changed from shopName
+  licenseNumber    String?  // Added pharmacy license
+  gstNumber        String?  // Added GST number
+  operatingHours   String?  // Added operating hours
+  servicesOffered  String[] // Added services (home delivery, consultation, etc.)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  vendor   Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  vendor   Vendor           @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   products Product[]
-  bookings MarketBooking[]
+  bookings PharmacyBooking[]
 
-  @@map("local_market_profiles")
+  @@map("pharmacy_profiles")
 }
 
 model Product {
   id                   String          @id @default(cuid())
-  localMarketProfileId String
-  productName          String
+  pharmacyProfileId    String          // Changed from localMarketProfileId
+  medicineName         String          // Changed from productName
+  brandName            String?         // Added brand name
   category             ProductCategory
   description          String?
+  composition          String?         // Added composition/ingredients
+  manufacturer         String?         // Added manufacturer
   priceMin             Float
   priceMax             Float
   minOrderQuantity     Int             @default(1)
+  packSize             String?         // Added pack size (e.g., "10 tablets", "100ml")
+  dosageForm           String?         // Added dosage form (tablet, syrup, capsule, etc.)
+  requiresPrescription Boolean         @default(false) // Added prescription requirement
   hasDelivery          Boolean         @default(false)
   deliveryAreas        String[]
-  certifications       String[]
+  certifications       String[]        // Drug licenses, FDA approvals, etc.
+  expiryDate           DateTime?       // Added expiry date
+  batchNumber          String?         // Added batch number
   isAvailable          Boolean         @default(true)
+  stockQuantity        Int?            // Added stock tracking
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
 
-  localMarketProfile LocalMarketProfile @relation(fields: [localMarketProfileId], references: [id], onDelete: Cascade)
-  bookings           MarketBooking[]
+  pharmacyProfile PharmacyProfile @relation(fields: [pharmacyProfileId], references: [id], onDelete: Cascade)
+  bookings        PharmacyBooking[]
 
   @@map("products")
 }
 
-model MarketBooking {
-  id                   String        @id @default(cuid())
-  bookingId            String
-  localMarketProfileId String
-  productId            String
-  quantity             Int
-  unitPrice            Float
-  totalAmount          Float
-  requiresDelivery     Boolean       @default(false)
-  deliveryAddress      String?
-  status               BookingStatus @default(PENDING)
-  createdAt            DateTime      @default(now())
+model PharmacyBooking {
+  id                String        @id @default(cuid())
+  bookingId         String
+  pharmacyProfileId String        // Changed from localMarketProfileId
+  productId         String
+  quantity          Int
+  unitPrice         Float
+  totalAmount       Float
+  requiresDelivery  Boolean       @default(false)
+  deliveryAddress   String?
+  prescriptionUrl   String?       // Added for prescription medicines
+  status            BookingStatus @default(PENDING)
+  createdAt         DateTime      @default(now())
 
-  booking            Booking            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  localMarketProfile LocalMarketProfile @relation(fields: [localMarketProfileId], references: [id], onDelete: Cascade)
-  product            Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  booking         Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  pharmacyProfile PharmacyProfile @relation(fields: [pharmacyProfileId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@map("market_bookings")
+  @@map("pharmacy_bookings")
 }
 
 // ================================
@@ -543,7 +561,7 @@ model Booking {
   hotelBooking     HotelBooking[]
   adventureBooking AdventureBooking[]
   transportBooking TransportBooking[]
-  marketBooking    MarketBooking[]
+  pharmacyBooking  PharmacyBooking[]
 
   payment Payment?
 

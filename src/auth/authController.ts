@@ -509,7 +509,7 @@ class AuthController {
               hotelProfile: true,
               adventureProfile: true,
               transportProfile: true,
-              marketProfile: true,
+              pharmacyProfile: true,
             },
           },
           adminProfile: true,
@@ -590,6 +590,18 @@ class AuthController {
         bankDetails,
       } = validation.data!;
 
+      // Map old vendor types to new pharmacy-focused types
+      const mappedVendorType =
+        vendorType === "LOCAL_MARKET"
+          ? "PHARMACY"
+          : vendorType === "HOTEL"
+          ? "WELLNESS_STORE"
+          : vendorType === "ADVENTURE"
+          ? "WELLNESS_STORE"
+          : vendorType === "TRANSPORT"
+          ? "OTHER"
+          : vendorType || "PHARMACY";
+
       // Check if user already has a vendor profile
       const existingVendor = await prisma.vendor.findUnique({
         where: { userId: req.user.userId },
@@ -615,7 +627,7 @@ class AuthController {
           gstNumber,
           panNumber,
           aadhaarNumber,
-          vendorType,
+          vendorType: mappedVendorType,
           status: "PENDING",
           bankDetails: {
             create: bankDetails,

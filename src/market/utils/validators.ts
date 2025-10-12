@@ -90,9 +90,9 @@ export const vendorApprovalSchema = z.object({
 
 export const productCreateSchema = z
   .object({
-    productName: z
+    medicineName: z
       .string()
-      .min(2, "Product name must be at least 2 characters")
+      .min(2, "Medicine name must be at least 2 characters")
       .max(100),
     category: z.nativeEnum(ProductCategory),
     description: z.string().max(1000).optional(),
@@ -113,7 +113,7 @@ export const productCreateSchema = z
 
 export const productUpdateSchema = z
   .object({
-    productName: z.string().min(2).max(100).optional(),
+    medicineName: z.string().min(2).max(100).optional(),
     category: z.nativeEnum(ProductCategory).optional(),
     description: z.string().max(1000).optional(),
     priceMin: z.number().min(0.01).optional(),
