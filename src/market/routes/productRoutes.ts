@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { ProductController } from "../controllers/productController.js";
 import { authMiddleware } from "../../middleware/auth.js";
+import {
+  uploadProductImages,
+  handleMulterError,
+} from "../../middleware/upload.js";
 
 const router = Router();
 const productController = new ProductController();
@@ -29,6 +33,8 @@ router.get(
 router.post(
   "/",
   authMiddleware,
+  uploadProductImages,
+  handleMulterError,
   productController.createProduct.bind(productController)
 );
 
@@ -58,6 +64,22 @@ router.patch(
   "/:id/toggle-availability",
   authMiddleware,
   productController.toggleProductAvailability.bind(productController)
+);
+
+// Add images to product
+router.post(
+  "/:id/images",
+  authMiddleware,
+  uploadProductImages,
+  handleMulterError,
+  productController.addProductImages.bind(productController)
+);
+
+// Delete product image
+router.delete(
+  "/:id/images/:imageId",
+  authMiddleware,
+  productController.deleteProductImage.bind(productController)
 );
 
 export { router as productRoutes };

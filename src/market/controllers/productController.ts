@@ -13,6 +13,7 @@ import {
 } from "../utils/validators.js";
 import { API_MESSAGES } from "../../common/constants.js";
 import type { AuthenticatedUser } from "../../common/types.js";
+import { ImageKitService } from "../services/imagekitService.js";
 
 // Extend Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -29,6 +30,7 @@ export class ProductController {
   async createProduct(req: AuthenticatedRequest, res: Response) {
     try {
       const user = req.user!;
+      const files = req.files as Express.Multer.File[];
 
       // Validate vendor permissions
       if (user.role !== "VENDOR" || !user.vendorId) {
@@ -70,6 +72,33 @@ export class ProductController {
 
       const productData = validationResult.data;
 
+      // Upload images to ImageKit if files are provided
+      let uploadedImages: any[] = [];
+      if (files && files.length > 0) {
+        try {
+          const imageResults = await ImageKitService.uploadMultipleImages(
+            files,
+            "products"
+          );
+          uploadedImages = imageResults.map((img) => ({
+            vendorId: user.vendorId,
+            imageUrl: img.url,
+            imageType: "product",
+            description: `Product image for ${productData.productName}`,
+            isPrimary: false,
+          }));
+          // Set first image as primary
+          if (uploadedImages.length > 0) {
+            uploadedImages[0].isPrimary = true;
+          }
+        } catch (uploadError) {
+          console.error("Image upload error:", uploadError);
+          return res
+            .status(500)
+            .json(createErrorResponse("Failed to upload product images"));
+        }
+      }
+
       // Create product
       const product = await prisma.product.create({
         data: {
@@ -86,6 +115,27 @@ export class ProductController {
         },
       });
 
+      // Create product images if any were uploaded
+      let createdImages: any[] = [];
+      if (uploadedImages.length > 0) {
+        try {
+          createdImages = await Promise.all(
+            uploadedImages.map(async (imageData) => {
+              return await prisma.vendorImage.create({
+                data: {
+                  ...imageData,
+                  description: `${imageData.description} - Product ID: ${product.id}`,
+                },
+              });
+            })
+          );
+        } catch (imageError) {
+          console.error("Error saving product images:", imageError);
+          // If product was created but images failed, we'll still return success
+          // but log the issue
+        }
+      }
+
       res.status(201).json(
         createSuccessResponse(API_MESSAGES.SUCCESS.PRODUCT_CREATED, {
           id: product.id,
@@ -99,6 +149,12 @@ export class ProductController {
           deliveryAreas: product.deliveryAreas,
           certifications: product.certifications,
           isAvailable: product.isAvailable,
+          images: createdImages.map((img) => ({
+            id: img.id,
+            imageUrl: img.imageUrl,
+            description: img.description,
+            isPrimary: img.isPrimary,
+          })),
           createdAt: product.createdAt,
         })
       );
@@ -168,27 +224,60 @@ export class ProductController {
         prisma.product.count({ where }),
       ]);
 
-      const formattedProducts = products.map((product) => ({
-        id: product.id,
-        productName: product.productName,
-        category: product.category,
-        description: product.description,
-        priceMin: product.priceMin,
-        priceMax: product.priceMax,
-        minOrderQuantity: product.minOrderQuantity,
-        hasDelivery: product.hasDelivery,
-        deliveryAreas: product.deliveryAreas,
-        certifications: product.certifications,
-        isAvailable: product.isAvailable,
-        vendor: {
-          id: product.localMarketProfile.vendor.id,
-          businessName: product.localMarketProfile.vendor.businessName,
-          businessAddress: product.localMarketProfile.vendor.businessAddress,
-          contactNumbers: product.localMarketProfile.vendor.contactNumbers,
+      // Get images for all products
+      const productIds = products.map((p) => p.id);
+      const productImages = await prisma.vendorImage.findMany({
+        where: {
+          imageType: "product",
+          description: {
+            contains: "Product ID:",
+          },
+          OR: productIds.map((id) => ({
+            description: {
+              contains: `Product ID: ${id}`,
+            },
+          })),
         },
-        images: [], // TODO: Add image URLs when image upload is implemented
-        createdAt: product.createdAt,
-      }));
+        select: {
+          id: true,
+          imageUrl: true,
+          description: true,
+          isPrimary: true,
+        },
+      });
+
+      const formattedProducts = products.map((product) => {
+        // Filter images for this specific product
+        const productImageList = productImages.filter((img) =>
+          img.description?.includes(`Product ID: ${product.id}`)
+        );
+
+        return {
+          id: product.id,
+          productName: product.productName,
+          category: product.category,
+          description: product.description,
+          priceMin: product.priceMin,
+          priceMax: product.priceMax,
+          minOrderQuantity: product.minOrderQuantity,
+          hasDelivery: product.hasDelivery,
+          deliveryAreas: product.deliveryAreas,
+          certifications: product.certifications,
+          isAvailable: product.isAvailable,
+          vendor: {
+            id: product.localMarketProfile.vendor.id,
+            businessName: product.localMarketProfile.vendor.businessName,
+            businessAddress: product.localMarketProfile.vendor.businessAddress,
+            contactNumbers: product.localMarketProfile.vendor.contactNumbers,
+          },
+          images: productImageList.map((img) => ({
+            id: img.id,
+            imageUrl: img.imageUrl,
+            isPrimary: img.isPrimary,
+          })),
+          createdAt: product.createdAt,
+        };
+      });
 
       const meta = createPaginationMeta(page, limit, total);
 
@@ -250,6 +339,23 @@ export class ProductController {
           .json(createErrorResponse(API_MESSAGES.ERROR.PRODUCT_UNAVAILABLE));
       }
 
+      // Get images for this product
+      const productImages = await prisma.vendorImage.findMany({
+        where: {
+          imageType: "product",
+          description: {
+            contains: `Product ID: ${product.id}`,
+          },
+        },
+        select: {
+          id: true,
+          imageUrl: true,
+          description: true,
+          isPrimary: true,
+        },
+        orderBy: [{ isPrimary: "desc" }, { uploadedAt: "asc" }],
+      });
+
       const formattedProduct = {
         id: product.id,
         productName: product.productName,
@@ -269,7 +375,11 @@ export class ProductController {
           contactNumbers: product.localMarketProfile.vendor.contactNumbers,
           googleMapsLink: product.localMarketProfile.vendor.googleMapsLink,
         },
-        images: [], // TODO: Add image URLs when image upload is implemented
+        images: productImages.map((img) => ({
+          id: img.id,
+          imageUrl: img.imageUrl,
+          isPrimary: img.isPrimary,
+        })),
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       };
@@ -579,6 +689,172 @@ export class ProductController {
       res
         .status(500)
         .json(createErrorResponse("Failed to retrieve product categories"));
+    }
+  }
+
+  // ================================
+  // Add Images to Product (Vendor)
+  // ================================
+
+  async addProductImages(req: AuthenticatedRequest, res: Response) {
+    try {
+      const user = req.user!;
+      const { id: productId } = req.params;
+      const files = req.files as Express.Multer.File[];
+
+      // Validate vendor permissions
+      if (user.role !== "VENDOR" || !user.vendorId) {
+        return res
+          .status(403)
+          .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
+      }
+
+      if (!productId) {
+        return res
+          .status(400)
+          .json(createErrorResponse("Product ID is required"));
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(400).json(createErrorResponse("No images provided"));
+      }
+
+      // Check if product exists and belongs to vendor
+      const product = await prisma.product.findFirst({
+        where: {
+          id: productId,
+          localMarketProfile: {
+            vendorId: user.vendorId!,
+          },
+        },
+      });
+
+      if (!product) {
+        return res
+          .status(404)
+          .json(
+            createErrorResponse("Product not found or not owned by vendor")
+          );
+      }
+
+      // Upload images to ImageKit
+      try {
+        const imageResults = await ImageKitService.uploadMultipleImages(
+          files,
+          "products"
+        );
+
+        const uploadedImages = imageResults.map((img) => ({
+          vendorId: user.vendorId!,
+          imageUrl: img.url,
+          imageType: "product",
+          description: `Product image for ${product.productName} - Product ID: ${productId}`,
+          isPrimary: false,
+        }));
+
+        // Create product images
+        const createdImages = await Promise.all(
+          uploadedImages.map(async (imageData) => {
+            return await prisma.vendorImage.create({
+              data: imageData,
+            });
+          })
+        );
+
+        res.status(201).json(
+          createSuccessResponse("Images added successfully", {
+            productId: productId,
+            images: createdImages.map((img) => ({
+              id: img.id,
+              imageUrl: img.imageUrl,
+              description: img.description,
+              isPrimary: img.isPrimary,
+            })),
+          })
+        );
+      } catch (uploadError) {
+        console.error("Image upload error:", uploadError);
+        return res
+          .status(500)
+          .json(createErrorResponse("Failed to upload product images"));
+      }
+    } catch (error) {
+      console.error("Error adding product images:", error);
+      res.status(500).json(createErrorResponse("Failed to add product images"));
+    }
+  }
+
+  // ================================
+  // Delete Product Image (Vendor)
+  // ================================
+
+  async deleteProductImage(req: AuthenticatedRequest, res: Response) {
+    try {
+      const user = req.user!;
+      const { id: productId, imageId } = req.params;
+
+      // Validate vendor permissions
+      if (user.role !== "VENDOR" || !user.vendorId) {
+        return res
+          .status(403)
+          .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
+      }
+
+      if (!productId || !imageId) {
+        return res
+          .status(400)
+          .json(createErrorResponse("Product ID and Image ID are required"));
+      }
+
+      // Check if product exists and belongs to vendor
+      const product = await prisma.product.findFirst({
+        where: {
+          id: productId,
+          localMarketProfile: {
+            vendorId: user.vendorId!,
+          },
+        },
+      });
+
+      if (!product) {
+        return res
+          .status(404)
+          .json(
+            createErrorResponse("Product not found or not owned by vendor")
+          );
+      }
+
+      // Find and delete the image
+      const image = await prisma.vendorImage.findFirst({
+        where: {
+          id: imageId,
+          vendorId: user.vendorId!,
+          imageType: "product",
+          description: {
+            contains: `Product ID: ${productId}`,
+          },
+        },
+      });
+
+      if (!image) {
+        return res.status(404).json(createErrorResponse("Image not found"));
+      }
+
+      // Delete from database
+      await prisma.vendorImage.delete({
+        where: { id: imageId },
+      });
+
+      res.json(
+        createSuccessResponse("Image deleted successfully", {
+          deletedImageId: imageId,
+        })
+      );
+    } catch (error) {
+      console.error("Error deleting product image:", error);
+      res
+        .status(500)
+        .json(createErrorResponse("Failed to delete product image"));
     }
   }
 }

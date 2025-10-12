@@ -35,6 +35,9 @@ export const upload = multer({
 // Middleware for multiple hotel images
 export const uploadHotelImages = upload.array("images", 10); // Max 10 images
 
+// Middleware for product images
+export const uploadProductImages = upload.array("images", 8); // Max 8 images for products
+
 // Middleware for single image
 export const uploadSingleImage = upload.single("image");
 

@@ -97,7 +97,26 @@ curl -X GET "http://localhost:3000/market/vendors/orders?status=PENDING&page=1&l
 # PRODUCT MANAGEMENT ENDPOINTS
 # ================================
 
-### Create New Product
+### Create New Product (with images)
+curl -X POST http://localhost:3000/market/products \
+  -H "Authorization: Bearer {{token}}" \
+  -F "productName=Kashmir Pashmina Shawl" \
+  -F "category=WOOLENS" \
+  -F "description=Authentic handwoven Pashmina shawl from Kashmir" \
+  -F "priceMin=5000" \
+  -F "priceMax=15000" \
+  -F "minOrderQuantity=1" \
+  -F "hasDelivery=true" \
+  -F "deliveryAreas=Srinagar" \
+  -F "deliveryAreas=Delhi" \
+  -F "deliveryAreas=Mumbai" \
+  -F "certifications=Handloom" \
+  -F "certifications=GI Tagged" \
+  -F "images=@/path/to/product_image1.jpg" \
+  -F "images=@/path/to/product_image2.jpg" \
+  -F "images=@/path/to/product_image3.jpg"
+
+### Create New Product (JSON only - no images)
 curl -X POST http://localhost:3000/market/products \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json" \
@@ -144,10 +163,24 @@ curl -X PUT http://localhost:3000/market/products/{{product_id}} \
 curl -X DELETE http://localhost:3000/market/products/{{product_id}} \
   -H "Authorization: Bearer {{token}}"
 
-### Upload Product Images
+### Add Images to Existing Product
 curl -X POST http://localhost:3000/market/products/{{product_id}}/images \
   -H "Authorization: Bearer {{token}}" \
-  -F "images=@/path/to/image1.jpg" \
+  -F "images=@/path/to/product_image1.jpg" \
+  -F "images=@/path/to/product_image2.jpg" \
+  -F "images=@/path/to/product_image3.jpg"
+
+### Delete Product Image
+curl -X DELETE http://localhost:3000/market/products/{{product_id}}/images/{{image_id}} \
+  -H "Authorization: Bearer {{token}}"
+
+### Toggle Product Availability
+curl -X PATCH http://localhost:3000/market/products/{{product_id}}/toggle-availability \
+  -H "Authorization: Bearer {{token}}"
+
+### Get Product Categories (Public)
+curl -X GET http://localhost:3000/market/products/categories/list \
+  -H "Content-Type: application/json"
   -F "images=@/path/to/image2.jpg"
 
 # ================================
