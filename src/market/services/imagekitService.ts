@@ -32,9 +32,9 @@ export class ImageKitService {
         fileName: fileName || `${Date.now()}_${file.originalname}`,
         folder: folder,
         useUniqueFileName: true,
-        transformation: {
-          pre: "l-text,i-Flickxir,fs-50,co-FFFFFF,bg-00000080,l-end", // Optional watermark
-        },
+        // transformation: {
+        //   pre: "l-text,i-Flickxir,fs-50,co-FFFFFF,bg-00000080,l-end", // Optional watermark - REMOVED
+        // },
       });
 
       return {
