@@ -246,7 +246,17 @@ export class ReportService {
           payment: true,
           pharmacyBooking: {
             include: {
-              product: { select: { category: true } },
+              product: {
+                select: {
+                  category: {
+                    select: {
+                      id: true,
+                      name: true,
+                      slug: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -274,8 +284,8 @@ export class ReportService {
       const categoryData: Record<string, number> = {};
       orders.forEach((order) => {
         order.pharmacyBooking.forEach((item) => {
-          const category = item.product.category;
-          categoryData[category] = (categoryData[category] || 0) + 1;
+          const categoryName = item.product.category.name;
+          categoryData[categoryName] = (categoryData[categoryName] || 0) + 1;
         });
       });
 
@@ -320,6 +330,13 @@ export class ReportService {
       const products = await prisma.product.findMany({
         where: whereClause,
         include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
           pharmacyProfile: {
             include: { vendor: { select: { businessName: true } } },
           },
@@ -345,7 +362,7 @@ export class ReportService {
         return {
           productId: product.id,
           productName: product.medicineName,
-          category: product.category,
+          category: product.category.name,
           vendorName: product.pharmacyProfile.vendor.businessName,
           totalQuantitySold: totalQuantity,
           totalRevenue,
@@ -527,7 +544,18 @@ export class ReportService {
           payment: { select: { paymentStatus: true, paymentMethod: true } },
           pharmacyBooking: {
             include: {
-              product: { select: { medicineName: true, category: true } },
+              product: {
+                select: {
+                  medicineName: true,
+                  category: {
+                    select: {
+                      id: true,
+                      name: true,
+                      slug: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -546,7 +574,7 @@ export class ReportService {
         itemCount: order.pharmacyBooking.length,
         products: order.pharmacyBooking.map((item) => ({
           name: item.product.medicineName,
-          category: item.product.category,
+          category: item.product.category.name,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),
