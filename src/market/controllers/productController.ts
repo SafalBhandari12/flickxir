@@ -31,9 +31,13 @@ export class ProductController {
     try {
       const user = req.user!;
       const files = req.files as Express.Multer.File[];
+      console.log("Safasl");
+      console.log(user.role);
+      console.log(user.vendorId);
+      console.log(user.userId);
 
       // Validate vendor permissions
-      if (user.role !== "VENDOR" || !user.vendorId) {
+      if (user.role !== "VENDOR" || !user.userId) {
         return res
           .status(403)
           .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
@@ -41,11 +45,21 @@ export class ProductController {
 
       // Check if vendor is approved
       const vendor = await prisma.vendor.findUnique({
-        where: { id: user.vendorId },
+        where: { userId: user.userId },
         include: { pharmacyProfile: true },
       });
+      console.log("=== VENDOR LOOKUP DEBUG ===");
+      console.log("Looking for vendor with userId:", user.userId);
+      console.log("Found vendor:", vendor);
+      console.log("Vendor status:", vendor?.status);
+      console.log("Vendor pharmacy profile:", vendor?.pharmacyProfile);
+      console.log("=== END DEBUG ===");
 
       if (!vendor || vendor.status !== "APPROVED") {
+        console.log("Vendor approval check failed:");
+        console.log("- Vendor exists:", !!vendor);
+        console.log("- Vendor status:", vendor?.status);
+        console.log("- Expected status: APPROVED");
         return res
           .status(403)
           .json(createErrorResponse(API_MESSAGES.ERROR.VENDOR_NOT_APPROVED));
@@ -81,7 +95,7 @@ export class ProductController {
             "products"
           );
           uploadedImages = imageResults.map((img) => ({
-            vendorId: user.vendorId,
+            vendorId: vendor.id,
             imageUrl: img.url,
             imageType: "product",
             description: `Product image for ${productData.medicineName}`,
@@ -404,7 +418,7 @@ export class ProductController {
     try {
       const user = req.user!;
 
-      if (user.role !== "VENDOR" || !user.vendorId) {
+      if (user.role !== "VENDOR" || !user.userId) {
         return res
           .status(403)
           .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
@@ -416,7 +430,7 @@ export class ProductController {
 
       // Get vendor's pharmacy profile
       const vendor = await prisma.vendor.findUnique({
-        where: { id: user.vendorId },
+        where: { userId: user.userId },
         include: { pharmacyProfile: true },
       });
 
@@ -471,7 +485,7 @@ export class ProductController {
           .json(createErrorResponse("Product ID is required"));
       }
 
-      if (user.role !== "VENDOR" || !user.vendorId) {
+      if (user.role !== "VENDOR" || !user.userId) {
         return res
           .status(403)
           .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
@@ -490,12 +504,22 @@ export class ProductController {
           );
       }
 
+      // Get vendor first to get the actual vendor ID
+      const vendor = await prisma.vendor.findUnique({
+        where: { userId: user.userId },
+        include: { pharmacyProfile: true },
+      });
+
+      if (!vendor) {
+        return res.status(404).json(createErrorResponse("Vendor not found"));
+      }
+
       // Check if product belongs to vendor
       const product = await prisma.product.findFirst({
         where: {
           id,
           pharmacyProfile: {
-            vendorId: user.vendorId,
+            vendorId: vendor.id,
           },
         },
       });
@@ -550,10 +574,19 @@ export class ProductController {
           .json(createErrorResponse("Product ID is required"));
       }
 
-      if (user.role !== "VENDOR" || !user.vendorId) {
+      if (user.role !== "VENDOR" || !user.userId) {
         return res
           .status(403)
           .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
+      }
+
+      // Get vendor first to get the actual vendor ID
+      const vendor = await prisma.vendor.findUnique({
+        where: { userId: user.userId },
+      });
+
+      if (!vendor) {
+        return res.status(404).json(createErrorResponse("Vendor not found"));
       }
 
       // Check if product belongs to vendor
@@ -561,7 +594,7 @@ export class ProductController {
         where: {
           id,
           pharmacyProfile: {
-            vendorId: user.vendorId,
+            vendorId: vendor.id,
           },
         },
       });
@@ -616,10 +649,19 @@ export class ProductController {
           .json(createErrorResponse("Product ID is required"));
       }
 
-      if (user.role !== "VENDOR" || !user.vendorId) {
+      if (user.role !== "VENDOR" || !user.userId) {
         return res
           .status(403)
           .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
+      }
+
+      // Get vendor first to get the actual vendor ID
+      const vendor = await prisma.vendor.findUnique({
+        where: { userId: user.userId },
+      });
+
+      if (!vendor) {
+        return res.status(404).json(createErrorResponse("Vendor not found"));
       }
 
       // Check if product belongs to vendor
@@ -627,7 +669,7 @@ export class ProductController {
         where: {
           id,
           pharmacyProfile: {
-            vendorId: user.vendorId,
+            vendorId: vendor.id,
           },
         },
       });
@@ -703,7 +745,7 @@ export class ProductController {
       const files = req.files as Express.Multer.File[];
 
       // Validate vendor permissions
-      if (user.role !== "VENDOR" || !user.vendorId) {
+      if (user.role !== "VENDOR" || !user.userId) {
         return res
           .status(403)
           .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
@@ -719,12 +761,21 @@ export class ProductController {
         return res.status(400).json(createErrorResponse("No images provided"));
       }
 
+      // Get vendor first to get the actual vendor ID
+      const vendor = await prisma.vendor.findUnique({
+        where: { userId: user.userId },
+      });
+
+      if (!vendor) {
+        return res.status(404).json(createErrorResponse("Vendor not found"));
+      }
+
       // Check if product exists and belongs to vendor
       const product = await prisma.product.findFirst({
         where: {
           id: productId,
           pharmacyProfile: {
-            vendorId: user.vendorId!,
+            vendorId: vendor.id,
           },
         },
       });
@@ -745,7 +796,7 @@ export class ProductController {
         );
 
         const uploadedImages = imageResults.map((img) => ({
-          vendorId: user.vendorId!,
+          vendorId: vendor.id,
           imageUrl: img.url,
           imageType: "product",
           description: `Product image for ${product.medicineName} - Product ID: ${productId}`,
@@ -794,7 +845,7 @@ export class ProductController {
       const { id: productId, imageId } = req.params;
 
       // Validate vendor permissions
-      if (user.role !== "VENDOR" || !user.vendorId) {
+      if (user.role !== "VENDOR" || !user.userId) {
         return res
           .status(403)
           .json(createErrorResponse(API_MESSAGES.ERROR.FORBIDDEN));
@@ -806,12 +857,21 @@ export class ProductController {
           .json(createErrorResponse("Product ID and Image ID are required"));
       }
 
+      // Get vendor first to get the actual vendor ID
+      const vendor = await prisma.vendor.findUnique({
+        where: { userId: user.userId },
+      });
+
+      if (!vendor) {
+        return res.status(404).json(createErrorResponse("Vendor not found"));
+      }
+
       // Check if product exists and belongs to vendor
       const product = await prisma.product.findFirst({
         where: {
           id: productId,
           pharmacyProfile: {
-            vendorId: user.vendorId!,
+            vendorId: vendor.id,
           },
         },
       });
@@ -828,7 +888,7 @@ export class ProductController {
       const image = await prisma.vendorImage.findFirst({
         where: {
           id: imageId,
-          vendorId: user.vendorId!,
+          vendorId: vendor.id,
           imageType: "product",
           description: {
             contains: `Product ID: ${productId}`,

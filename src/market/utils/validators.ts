@@ -96,13 +96,54 @@ export const productCreateSchema = z
       .max(100),
     category: z.nativeEnum(ProductCategory),
     description: z.string().max(1000).optional(),
-    priceMin: z.number().min(0.01, "Minimum price must be greater than 0"),
-    priceMax: z.number().min(0.01, "Maximum price must be greater than 0"),
+    priceMin: z
+      .union([z.string(), z.number()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          const parsed = parseFloat(val);
+          if (isNaN(parsed)) {
+            throw new Error("Invalid number format for priceMin");
+          }
+          return parsed;
+        }
+        return val;
+      })
+      .refine((val) => val > 0.01, "Minimum price must be greater than 0"),
+    priceMax: z
+      .union([z.string(), z.number()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          const parsed = parseFloat(val);
+          if (isNaN(parsed)) {
+            throw new Error("Invalid number format for priceMax");
+          }
+          return parsed;
+        }
+        return val;
+      })
+      .refine((val) => val > 0.01, "Maximum price must be greater than 0"),
     minOrderQuantity: z
-      .number()
-      .int()
-      .min(1, "Minimum order quantity must be at least 1"),
-    hasDelivery: z.boolean().default(false),
+      .union([z.string(), z.number()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          const parsed = parseInt(val, 10);
+          if (isNaN(parsed)) {
+            throw new Error("Invalid number format for minOrderQuantity");
+          }
+          return parsed;
+        }
+        return val;
+      })
+      .refine((val) => val >= 1, "Minimum order quantity must be at least 1"),
+    hasDelivery: z
+      .union([z.string(), z.boolean()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          return val.toLowerCase() === "true";
+        }
+        return val;
+      })
+      .default(false),
     deliveryAreas: z.array(z.string().max(100)).default([]),
     certifications: z.array(z.string().max(100)).default([]),
   })
@@ -116,13 +157,68 @@ export const productUpdateSchema = z
     medicineName: z.string().min(2).max(100).optional(),
     category: z.nativeEnum(ProductCategory).optional(),
     description: z.string().max(1000).optional(),
-    priceMin: z.number().min(0.01).optional(),
-    priceMax: z.number().min(0.01).optional(),
-    minOrderQuantity: z.number().int().min(1).optional(),
-    hasDelivery: z.boolean().optional(),
+    priceMin: z
+      .union([z.string(), z.number()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          const parsed = parseFloat(val);
+          if (isNaN(parsed)) {
+            throw new Error("Invalid number format for priceMin");
+          }
+          return parsed;
+        }
+        return val;
+      })
+      .refine((val) => val > 0.01, "Minimum price must be greater than 0")
+      .optional(),
+    priceMax: z
+      .union([z.string(), z.number()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          const parsed = parseFloat(val);
+          if (isNaN(parsed)) {
+            throw new Error("Invalid number format for priceMax");
+          }
+          return parsed;
+        }
+        return val;
+      })
+      .refine((val) => val > 0.01, "Maximum price must be greater than 0")
+      .optional(),
+    minOrderQuantity: z
+      .union([z.string(), z.number()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          const parsed = parseInt(val, 10);
+          if (isNaN(parsed)) {
+            throw new Error("Invalid number format for minOrderQuantity");
+          }
+          return parsed;
+        }
+        return val;
+      })
+      .refine((val) => val >= 1, "Minimum order quantity must be at least 1")
+      .optional(),
+    hasDelivery: z
+      .union([z.string(), z.boolean()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          return val.toLowerCase() === "true";
+        }
+        return val;
+      })
+      .optional(),
     deliveryAreas: z.array(z.string().max(100)).optional(),
     certifications: z.array(z.string().max(100)).optional(),
-    isAvailable: z.boolean().optional(),
+    isAvailable: z
+      .union([z.string(), z.boolean()])
+      .transform((val) => {
+        if (typeof val === "string") {
+          return val.toLowerCase() === "true";
+        }
+        return val;
+      })
+      .optional(),
   })
   .refine(
     (data) => {

@@ -65,7 +65,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "Sojourn Multi-Vendor Platform API is running!",
+    message: "Flickxir, Ecommerce website for the medicine",
     version: "1.0.0",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",

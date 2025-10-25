@@ -1,5 +1,5 @@
 # ================================
-# LOCAL MARKET PLATFORM API ENDPOINTS
+# PHARMACY PLATFORM API ENDPOINTS
 # ================================
 # Base URL: http://localhost:3000
 # All endpoints require proper authentication tokens where specified
@@ -38,31 +38,92 @@ curl -X POST http://localhost:3000/auth/logout \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json"
 
+### Get User Profile
+curl -X GET http://localhost:3000/auth/profile \
+  -H "Authorization: Bearer {{token}}"
+
+### Get Detailed User Profile
+curl -X GET http://localhost:3000/auth/me \
+  -H "Authorization: Bearer {{token}}"
+
+### Check if Phone Number Exists
+curl -X GET http://localhost:3000/auth/check-phone/9876543210 \
+  -H "Content-Type: application/json"
+
+### Resend OTP
+curl -X POST http://localhost:3000/auth/resend-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "9876543210"
+  }'
+
 # ================================
-# VENDOR MANAGEMENT ENDPOINTS
+# VENDOR REGISTRATION (AUTH ROUTES)
 # ================================
 
-### Vendor Onboarding (Customer becomes Vendor)
+### Register as Vendor (Alternative Auth Route)
+curl -X POST http://localhost:3000/auth/vendor/register \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "businessName": "HealthPlus Pharmacy",
+    "ownerName": "Dr. Sarah Wilson",
+    "contactNumbers": ["9876543210"],
+    "email": "sarah@healthplus.com",
+    "businessAddress": "Medical Complex, Sector 15, Noida 201301",
+    "googleMapsLink": "https://maps.google.com/?q=28.5935,77.3910",
+    "gstNumber": "09ABCDE1234F1Z5",
+    "panNumber": "ABCDE1234F",
+    "aadhaarNumber": "123456789012",
+    "vendorType": "PHARMACY",
+    "bankDetails": {
+      "accountNumber": "9876543210",
+      "ifscCode": "HDFC0001234",
+      "bankName": "HDFC Bank",
+      "branchName": "Noida Sector 15",
+      "accountHolder": "Sarah Wilson"
+    }
+  }'
+
+### Get Vendor Application Status
+curl -X GET http://localhost:3000/auth/vendor/status \
+  -H "Authorization: Bearer {{token}}"
+
+### Update Vendor Profile (Auth Route)
+curl -X PUT http://localhost:3000/auth/vendor/profile \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "businessName": "Updated Pharmacy Name",
+    "contactNumbers": ["9876543210", "9876543211"],
+    "email": "updated@pharmacy.com"
+  }'
+
+# ================================
+# PHARMACY VENDOR MANAGEMENT ENDPOINTS
+# ================================
+
+### Pharmacy Vendor Onboarding (Customer becomes Pharmacy Vendor)
 curl -X POST http://localhost:3000/market/vendors/onboard \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json" \
   -d '{
-    "businessName": "Kashmir Handicrafts Store",
-    "ownerName": "John Doe",
+    "businessName": "HealthCare Pharmacy",
+    "ownerName": "Dr. John Doe",
     "contactNumbers": ["9876543210", "9876543211"],
-    "email": "john@kashmirhandicrafts.com",
-    "businessAddress": "Lal Chowk, Srinagar, Kashmir 190001",
-    "googleMapsLink": "https://maps.google.com/?q=34.0837,74.7973",
-    "gstNumber": "15ABCDE1234F1Z5",
+    "email": "john@healthcarepharmacy.com",
+    "businessAddress": "Medical Complex, Main Road, Delhi 110001",
+    "googleMapsLink": "https://maps.google.com/?q=28.6139,77.2090",
+    "gstNumber": "07ABCDE1234F1Z5",
     "panNumber": "ABCDE1234F",
     "aadhaarNumber": "123456789012",
-    "vendorType": "LOCAL_MARKET",
-    "shopName": "Kashmir Handicrafts",
+    "vendorType": "PHARMACY",
+    "shopName": "HealthCare Pharmacy",
     "bankDetails": {
       "accountNumber": "1234567890",
       "ifscCode": "SBIN0001234",
       "bankName": "State Bank of India",
-      "branchName": "Lal Chowk Branch",
+      "branchName": "Medical Complex Branch",
       "accountHolder": "John Doe"
     }
   }'
@@ -76,9 +137,9 @@ curl -X PUT http://localhost:3000/market/vendors/profile \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json" \
   -d '{
-    "businessName": "Updated Business Name",
+    "businessName": "Updated Pharmacy Name",
     "contactNumbers": ["9876543210"],
-    "email": "updated@email.com"
+    "email": "updated@pharmacy.com"
   }'
 
 ### Get Vendor Dashboard Stats
@@ -93,120 +154,159 @@ curl -X GET http://localhost:3000/market/vendors/earnings \
 curl -X GET "http://localhost:3000/market/vendors/orders?status=PENDING&page=1&limit=10" \
   -H "Authorization: Bearer {{token}}"
 
+### Get Vendor Orders - Different Status Options
+curl -X GET "http://localhost:3000/market/vendors/orders?status=CONFIRMED&page=1&limit=20" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get Vendor Orders - Pagination Examples
+curl -X GET "http://localhost:3000/market/vendors/orders?page=2&limit=25" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get Vendor Orders - All Orders
+curl -X GET "http://localhost:3000/market/vendors/orders?page=1&limit=50" \
+  -H "Authorization: Bearer {{token}}"
+
 # ================================
-# PRODUCT MANAGEMENT ENDPOINTS
+# MEDICINE MANAGEMENT ENDPOINTS
 # ================================
 
-### Create New Product (with images)
+### Create New Medicine (with images)
 curl -X POST http://localhost:3000/market/products \
   -H "Authorization: Bearer {{token}}" \
-  -F "productName=Kashmir Pashmina Shawl" \
-  -F "category=WOOLENS" \
-  -F "description=Authentic handwoven Pashmina shawl from Kashmir" \
-  -F "priceMin=5000" \
-  -F "priceMax=15000" \
+  -F "medicineName=Paracetamol 500mg" \
+  -F "category=OTC_MEDICINE" \
+  -F "description=Pain relief and fever reducer tablets" \
+  -F "priceMin=25" \
+  -F "priceMax=50" \
   -F "minOrderQuantity=1" \
   -F "hasDelivery=true" \
-  -F "deliveryAreas=Srinagar" \
   -F "deliveryAreas=Delhi" \
   -F "deliveryAreas=Mumbai" \
-  -F "certifications=Handloom" \
-  -F "certifications=GI Tagged" \
-  -F "images=@/path/to/product_image1.jpg" \
-  -F "images=@/path/to/product_image2.jpg" \
-  -F "images=@/path/to/product_image3.jpg"
+  -F "deliveryAreas=Bangalore" \
+  -F "certifications=WHO GMP" \
+  -F "certifications=FDA Approved" \
+  -F "images=@/path/to/medicine_image1.jpg" \
+  -F "images=@/path/to/medicine_image2.jpg" \
+  -F "images=@/path/to/medicine_box.jpg"
 
-### Create New Product (JSON only - no images)
+### Create New Medicine (JSON only - no images)
 curl -X POST http://localhost:3000/market/products \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json" \
   -d '{
-    "productName": "Kashmir Pashmina Shawl",
-    "category": "WOOLENS",
-    "description": "Authentic handwoven Pashmina shawl from Kashmir",
-    "priceMin": 5000,
-    "priceMax": 15000,
+    "medicineName": "Paracetamol 500mg",
+    "category": "OTC_MEDICINE",
+    "description": "Pain relief and fever reducer tablets",
+    "priceMin": 25,
+    "priceMax": 50,
     "minOrderQuantity": 1,
     "hasDelivery": true,
-    "deliveryAreas": ["Srinagar", "Delhi", "Mumbai"],
-    "certifications": ["Handloom", "GI Tagged"]
+    "deliveryAreas": ["Delhi", "Mumbai", "Bangalore"],
+    "certifications": ["WHO GMP", "FDA Approved"]
   }'
 
-### Get All Products (Public - No Auth Required)
-curl -X GET "http://localhost:3000/market/products?page=1&limit=10&category=HANDICRAFT&minPrice=1000&maxPrice=5000" \
+### Get All Medicines (Public - No Auth Required)
+curl -X GET "http://localhost:3000/market/products?page=1&limit=10&category=OTC_MEDICINE&minPrice=10&maxPrice=500" \
   -H "Content-Type: application/json"
 
-### Search Products (Public)
-curl -X GET "http://localhost:3000/market/products?query=saffron&hasDelivery=true&location=Delhi" \
+### Get All Medicines - Different Categories
+curl -X GET "http://localhost:3000/market/products?category=PRESCRIPTION_MEDICINE&page=1&limit=20" \
   -H "Content-Type: application/json"
 
-### Get Product by ID (Public)
-curl -X GET http://localhost:3000/market/products/{{product_id}} \
+### Get All Medicines - Price Range Filters
+curl -X GET "http://localhost:3000/market/products?minPrice=50&maxPrice=200&page=1&limit=15" \
   -H "Content-Type: application/json"
 
-### Get Vendor's Products
+### Get All Medicines - Pagination Examples
+curl -X GET "http://localhost:3000/market/products?page=2&limit=25" \
+  -H "Content-Type: application/json"
+
+### Get All Medicines - Combined Filters
+curl -X GET "http://localhost:3000/market/products?category=HEALTH_SUPPLEMENTS&minPrice=100&maxPrice=1000&page=1&limit=12" \
+  -H "Content-Type: application/json"
+
+### Search Medicines (Public)
+curl -X GET "http://localhost:3000/market/products?query=paracetamol&hasDelivery=true&location=Delhi" \
+  -H "Content-Type: application/json"
+
+### Get Medicine by ID (Public)
+curl -X GET http://localhost:3000/market/products/{{medicine_id}} \
+  -H "Content-Type: application/json"
+
+### Get Pharmacy's Medicines
 curl -X GET http://localhost:3000/market/products/vendor/my-products \
   -H "Authorization: Bearer {{token}}"
 
-### Update Product
-curl -X PUT http://localhost:3000/market/products/{{product_id}} \
+### Update Medicine
+curl -X PUT http://localhost:3000/market/products/{{medicine_id}} \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json" \
   -d '{
-    "productName": "Updated Product Name",
-    "priceMin": 6000,
-    "priceMax": 18000,
+    "medicineName": "Updated Medicine Name",
+    "priceMin": 30,
+    "priceMax": 80,
     "isAvailable": true
   }'
 
-### Delete Product
-curl -X DELETE http://localhost:3000/market/products/{{product_id}} \
+### Delete Medicine
+curl -X DELETE http://localhost:3000/market/products/{{medicine_id}} \
   -H "Authorization: Bearer {{token}}"
 
-### Add Images to Existing Product
-curl -X POST http://localhost:3000/market/products/{{product_id}}/images \
+### Add Images to Existing Medicine
+curl -X POST http://localhost:3000/market/products/{{medicine_id}}/images \
   -H "Authorization: Bearer {{token}}" \
-  -F "images=@/path/to/product_image1.jpg" \
-  -F "images=@/path/to/product_image2.jpg" \
-  -F "images=@/path/to/product_image3.jpg"
+  -F "images=@/path/to/medicine_image1.jpg" \
+  -F "images=@/path/to/medicine_image2.jpg" \
+  -F "images=@/path/to/medicine_box.jpg"
 
-### Delete Product Image
-curl -X DELETE http://localhost:3000/market/products/{{product_id}}/images/{{image_id}} \
+### Delete Medicine Image
+curl -X DELETE http://localhost:3000/market/products/{{medicine_id}}/images/{{image_id}} \
   -H "Authorization: Bearer {{token}}"
 
-### Toggle Product Availability
-curl -X PATCH http://localhost:3000/market/products/{{product_id}}/toggle-availability \
+### Toggle Medicine Availability
+curl -X PATCH http://localhost:3000/market/products/{{medicine_id}}/toggle-availability \
   -H "Authorization: Bearer {{token}}"
 
-### Get Product Categories (Public)
+### Get Medicine Categories (Public)
 curl -X GET http://localhost:3000/market/products/categories/list \
   -H "Content-Type: application/json"
-  -F "images=@/path/to/image2.jpg"
 
 # ================================
 # ORDER MANAGEMENT ENDPOINTS
 # ================================
 
-### Create Order
+### Create Medicine Order
 curl -X POST http://localhost:3000/market/orders \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json" \
   -d '{
     "items": [
       {
-        "productId": "{{product_id}}",
+        "productId": "{{medicine_id}}",
         "quantity": 2,
-        "unitPrice": 5000,
+        "unitPrice": 50,
         "requiresDelivery": true,
-        "deliveryAddress": "123 Main Street, Delhi 110001"
+        "deliveryAddress": "123 Health Street, Delhi 110001"
       }
     ],
-    "totalAmount": 10000,
+    "totalAmount": 100,
     "paymentMethod": "RAZORPAY"
   }'
 
 ### Get User Orders
 curl -X GET "http://localhost:3000/market/orders?status=PENDING&page=1&limit=10" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get User Orders - Different Status Options
+curl -X GET "http://localhost:3000/market/orders?status=DELIVERED&page=1&limit=20" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get User Orders - Pagination Examples
+curl -X GET "http://localhost:3000/market/orders?page=2&limit=15" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get User Orders - Multiple Status Options
+curl -X GET "http://localhost:3000/market/orders?status=CONFIRMED&page=1&limit=25" \
   -H "Authorization: Bearer {{token}}"
 
 ### Get Order by ID
@@ -264,69 +364,220 @@ curl -X GET http://localhost:3000/market/orders/{{order_id}}/payment \
 # ADMIN ENDPOINTS
 # ================================
 
-### Get Dashboard Statistics
-curl -X GET http://localhost:3000/market/admin/dashboard \
+### Get Admin Dashboard Statistics
+curl -X GET http://localhost:3000/market/admin/dashboard/stats \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Get All Vendors
-curl -X GET "http://localhost:3000/market/admin/vendors?status=PENDING&page=1&limit=10" \
+### Get All Users
+curl -X GET "http://localhost:3000/market/admin/users?page=1&limit=10&role=VENDOR" \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Get Vendor Details
-curl -X GET http://localhost:3000/market/admin/vendors/{{vendor_id}} \
+### Get All Users - Different Role Options
+curl -X GET "http://localhost:3000/market/admin/users?role=CUSTOMER&page=1&limit=25" \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Approve Vendor
-curl -X PUT http://localhost:3000/market/admin/vendors/{{vendor_id}}/approve \
+### Get All Users - Pagination Examples
+curl -X GET "http://localhost:3000/market/admin/users?page=3&limit=50" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Toggle User Status (Activate/Deactivate)
+curl -X PATCH http://localhost:3000/market/admin/users/{{user_id}}/toggle-status \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Medicine Orders (Admin View)
+curl -X GET "http://localhost:3000/market/admin/orders?status=PENDING&page=1&limit=10" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Orders - Different Status Options
+curl -X GET "http://localhost:3000/market/admin/orders?status=CONFIRMED&page=1&limit=20" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Orders - Pagination Examples
+curl -X GET "http://localhost:3000/market/admin/orders?page=2&limit=50" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Orders - Multiple Status Filter
+curl -X GET "http://localhost:3000/market/admin/orders?status=DELIVERED&page=1&limit=15" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Export Orders Data
+curl -X GET "http://localhost:3000/market/admin/orders/export?startDate=2024-01-01&endDate=2024-12-31&vendorId={{vendor_id}}" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get Sales Analytics
+curl -X GET "http://localhost:3000/market/admin/analytics/sales?period=month&vendorId={{vendor_id}}" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get Product Performance Analytics
+curl -X GET "http://localhost:3000/market/admin/analytics/products?limit=20&vendorId={{vendor_id}}" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get Vendor Performance Analytics
+curl -X GET "http://localhost:3000/market/admin/analytics/vendors?limit=20" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get User Activity Report
+curl -X GET "http://localhost:3000/market/admin/analytics/users?period=month" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get System Configuration
+curl -X GET http://localhost:3000/market/admin/config \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Update System Configuration
+curl -X POST http://localhost:3000/market/admin/config \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": "commissionRate",
+    "value": "8.5"
+  }'
+
+# ================================
+# ADMIN VENDOR MANAGEMENT
+# ================================
+
+### Get All Vendors/Pharmacies
+curl -X GET "http://localhost:3000/market/vendors?status=PENDING&vendorType=PHARMACY&page=1&limit=10&query=healthcare" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Vendors - Different Status Options
+curl -X GET "http://localhost:3000/market/vendors?status=APPROVED&page=1&limit=20" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Vendors - Different Vendor Types
+curl -X GET "http://localhost:3000/market/vendors?vendorType=MEDICAL_STORE&page=1&limit=15" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Vendors - Search by Business Name
+curl -X GET "http://localhost:3000/market/vendors?query=apollo&page=1&limit=10" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Vendors - Pagination Examples
+curl -X GET "http://localhost:3000/market/vendors?page=2&limit=25" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get Vendor Details by ID
+curl -X GET http://localhost:3000/market/vendors/{{vendor_id}} \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Approve/Reject Vendor
+curl -X PATCH http://localhost:3000/market/vendors/{{vendor_id}}/status \
   -H "Authorization: Bearer {{admin_token}}" \
   -H "Content-Type: application/json" \
   -d '{
     "status": "APPROVED",
-    "commissionRate": 12.0
+    "commissionRate": 8.0
   }'
 
-### Reject Vendor
-curl -X PUT http://localhost:3000/market/admin/vendors/{{vendor_id}}/approve \
+### Reject Vendor with Reason
+curl -X PATCH http://localhost:3000/market/vendors/{{vendor_id}}/status \
   -H "Authorization: Bearer {{admin_token}}" \
   -H "Content-Type: application/json" \
   -d '{
     "status": "REJECTED",
-    "rejectionReason": "Incomplete documentation"
+    "rejectionReason": "Incomplete pharmacy license documentation"
   }'
 
-### Get All Users
-curl -X GET "http://localhost:3000/market/admin/users?page=1&limit=10" \
+# ================================
+# AUTH-BASED ADMIN VENDOR MANAGEMENT
+# ================================
+
+### Get All Vendors for Admin Review (Auth Route)
+curl -X GET "http://localhost:3000/auth/admin/vendors?status=PENDING&vendorType=PHARMACY&page=1&limit=10" \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Get User Details
-curl -X GET http://localhost:3000/market/admin/users/{{user_id}} \
+### Get All Vendors - Different Status Options
+curl -X GET "http://localhost:3000/auth/admin/vendors?status=APPROVED&page=1&limit=20" \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Get All Orders (Admin View)
-curl -X GET "http://localhost:3000/market/admin/orders?status=PENDING&page=1&limit=10" \
+### Get All Vendors - Different Vendor Types
+curl -X GET "http://localhost:3000/auth/admin/vendors?vendorType=MEDICAL_STORE&page=1&limit=15" \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Get Analytics Report
-curl -X GET http://localhost:3000/market/admin/analytics \
+### Get All Vendors - Pagination Examples
+curl -X GET "http://localhost:3000/auth/admin/vendors?page=2&limit=5" \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Get Revenue Report
-curl -X GET "http://localhost:3000/market/admin/reports/revenue?period=month" \
+### Get All Vendors - Combined Filters
+curl -X GET "http://localhost:3000/auth/admin/vendors?status=REJECTED&vendorType=PHARMACY&page=3&limit=25" \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Get Vendor Performance Report
-curl -X GET http://localhost:3000/market/admin/reports/vendor-performance \
+### Approve Vendor (Auth Route)
+curl -X PUT http://localhost:3000/auth/admin/vendor/{{vendor_id}}/approve \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json"
+
+### Reject Vendor (Auth Route)
+curl -X PUT http://localhost:3000/auth/admin/vendor/{{vendor_id}}/reject \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json"
+
+### Suspend Vendor (Auth Route)
+curl -X PUT http://localhost:3000/auth/admin/vendor/{{vendor_id}}/suspend \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json"
+
+# ================================
+# AUTH-BASED ADMIN USER MANAGEMENT
+# ================================
+
+### Get All Users for Admin Review (Auth Route)
+curl -X GET "http://localhost:3000/auth/admin/users?role=VENDOR&isActive=true&page=1&limit=10" \
   -H "Authorization: Bearer {{admin_token}}"
 
-### Update System Configuration
-curl -X PUT http://localhost:3000/market/admin/config \
+### Get All Users - Different Role Options
+curl -X GET "http://localhost:3000/auth/admin/users?role=CUSTOMER&page=1&limit=20" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Users - Filter by Active Status
+curl -X GET "http://localhost:3000/auth/admin/users?isActive=false&page=1&limit=15" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Users - Admin Role Only
+curl -X GET "http://localhost:3000/auth/admin/users?role=ADMIN&page=1&limit=5" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Get All Users - Pagination Examples
+curl -X GET "http://localhost:3000/auth/admin/users?page=2&limit=50" \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Toggle User Status - Activate/Deactivate (Auth Route)
+curl -X PUT http://localhost:3000/auth/admin/user/{{user_id}}/toggle-status \
   -H "Authorization: Bearer {{admin_token}}" \
   -H "Content-Type: application/json" \
   -d '{
-    "commissionRate": 15.0,
-    "maxProductImages": 6,
-    "minOrderAmount": 100
+    "isActive": false
   }'
+
+### Assign Admin Role to User
+curl -X PUT http://localhost:3000/auth/admin/user/{{user_id}}/assign-admin \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "New Admin User",
+    "email": "admin@pharmacy.com",
+    "permissions": ["MANAGE_VENDORS", "MANAGE_USERS", "MANAGE_ORDERS"]
+  }'
+
+### Revoke Admin Role from User
+curl -X PUT http://localhost:3000/auth/admin/user/{{user_id}}/revoke-admin \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json"
+
+### Update Admin Profile
+curl -X PUT http://localhost:3000/auth/admin/profile \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Updated Admin Name",
+    "email": "updated.admin@pharmacy.com",
+    "permissions": ["MANAGE_VENDORS", "MANAGE_USERS", "MANAGE_ORDERS", "MANAGE_ANALYTICS"]
+  }'
+
+### Test Admin Access
+curl -X GET http://localhost:3000/auth/admin/test \
+  -H "Authorization: Bearer {{admin_token}}"
 
 # ================================
 # NOTIFICATION ENDPOINTS
@@ -334,6 +585,18 @@ curl -X PUT http://localhost:3000/market/admin/config \
 
 ### Get User Notifications
 curl -X GET "http://localhost:3000/market/notifications?page=1&limit=20" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get User Notifications - Different Page Sizes
+curl -X GET "http://localhost:3000/market/notifications?page=1&limit=10" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get User Notifications - Pagination Examples
+curl -X GET "http://localhost:3000/market/notifications?page=2&limit=15" \
+  -H "Authorization: Bearer {{token}}"
+
+### Get User Notifications - Large Page Size
+curl -X GET "http://localhost:3000/market/notifications?page=1&limit=50" \
   -H "Authorization: Bearer {{token}}"
 
 ### Mark Notification as Read
@@ -348,8 +611,24 @@ curl -X PUT http://localhost:3000/market/notifications/mark-all-read \
 # SEARCH AND FILTER ENDPOINTS
 # ================================
 
-### Advanced Product Search
-curl -X GET "http://localhost:3000/market/products/search?query=kashmiri+saffron&category=SAFFRON&minPrice=2000&maxPrice=10000&hasDelivery=true&location=Delhi&sortBy=price&sortOrder=asc&page=1&limit=10" \
+### Advanced Medicine Search
+curl -X GET "http://localhost:3000/market/products/search?query=paracetamol&category=OTC_MEDICINE&minPrice=10&maxPrice=100&hasDelivery=true&location=Delhi&sortBy=price&sortOrder=asc&page=1&limit=10" \
+  -H "Content-Type: application/json"
+
+### Advanced Search - Different Categories
+curl -X GET "http://localhost:3000/market/products/search?query=insulin&category=PRESCRIPTION_MEDICINE&page=1&limit=20" \
+  -H "Content-Type: application/json"
+
+### Advanced Search - Sort by Name
+curl -X GET "http://localhost:3000/market/products/search?category=HEALTH_SUPPLEMENTS&sortBy=medicineName&sortOrder=desc&page=1&limit=15" \
+  -H "Content-Type: application/json"
+
+### Advanced Search - Price Range
+curl -X GET "http://localhost:3000/market/products/search?minPrice=200&maxPrice=1000&sortBy=price&sortOrder=desc&page=1&limit=12" \
+  -H "Content-Type: application/json"
+
+### Advanced Search - Location Filter
+curl -X GET "http://localhost:3000/market/products/search?location=Mumbai&hasDelivery=true&page=2&limit=25" \
   -H "Content-Type: application/json"
 
 ### Get Product Categories
@@ -442,19 +721,19 @@ curl -X POST http://localhost:3000/auth/verify-otp \
     "otpCode": "123456"
   }'
 
-### 2. Browse Products
-curl -X GET "http://localhost:3000/market/products?category=HANDICRAFT&page=1&limit=10"
+### 2. Browse Medicines
+curl -X GET "http://localhost:3000/market/products?category=OTC_MEDICINE&page=1&limit=10"
 
-### 3. View Product Details
-curl -X GET http://localhost:3000/market/products/{{product_id}}
+### 3. View Medicine Details
+curl -X GET http://localhost:3000/market/products/{{medicine_id}}
 
-### 4. Create Order
+### 4. Create Medicine Order
 curl -X POST http://localhost:3000/market/orders \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json" \
   -d '{
-    "items": [{"productId": "{{product_id}}", "quantity": 1, "unitPrice": 5000}],
-    "totalAmount": 5000
+    "items": [{"productId": "{{medicine_id}}", "quantity": 2, "unitPrice": 50}],
+    "totalAmount": 100
   }'
 
 ### 5. Create Payment
@@ -479,50 +758,50 @@ curl -X POST http://localhost:3000/market/orders/{{order_id}}/payment/verify \
   }'
 
 # ================================
-# VENDOR JOURNEY EXAMPLE
+# PHARMACY VENDOR JOURNEY EXAMPLE
 # ================================
 
-### 1. Vendor Onboarding
+### 1. Pharmacy Vendor Onboarding
 curl -X POST http://localhost:3000/market/vendors/onboard \
   -H "Authorization: Bearer {{token}}" \
   -H "Content-Type: application/json" \
   -d '{
-    "businessName": "Kashmir Arts",
-    "ownerName": "Vendor Name",
+    "businessName": "HealthCare Pharmacy",
+    "ownerName": "Dr. John Doe",
     "contactNumbers": ["9876543210"],
-    "email": "vendor@kashmirarts.com",
-    "businessAddress": "Srinagar, Kashmir",
-    "googleMapsLink": "https://maps.google.com/?q=34.0837,74.7973",
-    "gstNumber": "15ABCDE1234F1Z5",
+    "email": "john@healthcarepharmacy.com",
+    "businessAddress": "Medical Complex, Main Road, Delhi 110001",
+    "googleMapsLink": "https://maps.google.com/?q=28.6139,77.2090",
+    "gstNumber": "07ABCDE1234F1Z5",
     "panNumber": "ABCDE1234F",
     "aadhaarNumber": "123456789012",
-    "vendorType": "LOCAL_MARKET",
-    "shopName": "Kashmir Arts",
+    "vendorType": "PHARMACY",
+    "shopName": "HealthCare Pharmacy",
     "bankDetails": {
       "accountNumber": "1234567890",
       "ifscCode": "SBIN0001234",
       "bankName": "State Bank of India",
-      "branchName": "Srinagar Branch",
-      "accountHolder": "Vendor Name"
+      "branchName": "Medical Complex Branch",
+      "accountHolder": "John Doe"
     }
   }'
 
-### 2. Add Products
+### 2. Add Medicines
 curl -X POST http://localhost:3000/market/products \
   -H "Authorization: Bearer {{vendor_token}}" \
   -H "Content-Type: application/json" \
   -d '{
-    "productName": "Handmade Carpet",
-    "category": "HANDICRAFT",
-    "description": "Beautiful handwoven carpet",
-    "priceMin": 10000,
-    "priceMax": 50000,
+    "medicineName": "Paracetamol 500mg",
+    "category": "OTC_MEDICINE",
+    "description": "Pain relief and fever reducer tablets",
+    "priceMin": 25,
+    "priceMax": 50,
     "minOrderQuantity": 1,
     "hasDelivery": true,
     "deliveryAreas": ["Delhi", "Mumbai", "Bangalore"]
   }'
 
-### 3. Manage Orders
+### 3. Manage Medicine Orders
 curl -X GET http://localhost:3000/market/vendors/orders \
   -H "Authorization: Bearer {{vendor_token}}"
 
@@ -532,7 +811,7 @@ curl -X PUT http://localhost:3000/market/orders/{{order_id}}/status \
   -H "Content-Type: application/json" \
   -d '{
     "status": "CONFIRMED",
-    "notes": "Order confirmed and being prepared"
+    "notes": "Medicine order confirmed and will be dispatched soon"
   }'
 
 # ================================
