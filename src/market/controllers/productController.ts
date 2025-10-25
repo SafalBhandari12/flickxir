@@ -118,7 +118,7 @@ export class ProductController {
         data: {
           pharmacyProfileId: vendor.pharmacyProfile.id,
           medicineName: productData.medicineName,
-          category: productData.category,
+          categoryId: productData.categoryId,
           description: productData.description ?? null,
           priceMin: productData.priceMin,
           priceMax: productData.priceMax,
@@ -154,7 +154,7 @@ export class ProductController {
         createSuccessResponse(API_MESSAGES.SUCCESS.PRODUCT_CREATED, {
           id: product.id,
           productName: product.medicineName,
-          category: product.category,
+          categoryId: product.categoryId,
           description: product.description,
           priceMin: product.priceMin,
           priceMax: product.priceMax,
@@ -200,13 +200,13 @@ export class ProductController {
 
       if (query) {
         where.OR = [
-          { productName: { contains: query, mode: "insensitive" } },
+          { medicineName: { contains: query, mode: "insensitive" } },
           { description: { contains: query, mode: "insensitive" } },
         ];
       }
 
       if (category) {
-        where.category = category;
+        where.categoryId = category;
       }
 
       if (req.query.hasDelivery !== undefined) {
@@ -221,6 +221,13 @@ export class ProductController {
           take,
           orderBy: { createdAt: "desc" },
           include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
             pharmacyProfile: {
               include: {
                 vendor: {
@@ -269,7 +276,11 @@ export class ProductController {
         return {
           id: product.id,
           productName: product.medicineName,
-          category: product.category,
+          category: {
+            id: product.category.id,
+            name: product.category.name,
+            slug: product.category.slug,
+          },
           description: product.description,
           priceMin: product.priceMin,
           priceMax: product.priceMax,
@@ -325,6 +336,13 @@ export class ProductController {
       const product = await prisma.product.findUnique({
         where: { id },
         include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
           pharmacyProfile: {
             include: {
               vendor: {
@@ -373,7 +391,11 @@ export class ProductController {
       const formattedProduct = {
         id: product.id,
         productName: product.medicineName,
-        category: product.category,
+        category: {
+          id: product.category.id,
+          name: product.category.name,
+          slug: product.category.slug,
+        },
         description: product.description,
         priceMin: product.priceMin,
         priceMax: product.priceMax,
@@ -709,21 +731,27 @@ export class ProductController {
   async getProductCategories(req: Request, res: Response) {
     try {
       // Get categories with product counts
-      const categoryCounts = await prisma.product.groupBy({
-        by: ["category"],
-        where: { isAvailable: true },
-        _count: { category: true },
+      const categories = await prisma.category.findMany({
+        where: { isActive: true },
+        include: {
+          _count: {
+            select: { products: { where: { isAvailable: true } } },
+          },
+        },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       });
 
-      const categories = categoryCounts.map((item) => ({
-        category: item.category,
-        count: item._count.category,
+      const formattedCategories = categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+        count: category._count.products,
       }));
 
       res.json(
         createSuccessResponse(
           "Product categories retrieved successfully",
-          categories
+          formattedCategories
         )
       );
     } catch (error) {

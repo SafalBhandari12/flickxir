@@ -85,6 +85,37 @@ export const vendorApprovalSchema = z.object({
 });
 
 // ================================
+// Category Validation Schemas
+// ================================
+
+export const categoryCreateSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Category name must be at least 2 characters")
+    .max(100, "Category name must not exceed 100 characters"),
+  description: z
+    .string()
+    .max(500, "Description must not exceed 500 characters")
+    .optional(),
+  isActive: z.boolean().default(true).optional(),
+  sortOrder: z.number().int().min(0).default(0).optional(),
+});
+
+export const categoryUpdateSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Category name must be at least 2 characters")
+    .max(100, "Category name must not exceed 100 characters")
+    .optional(),
+  description: z
+    .string()
+    .max(500, "Description must not exceed 500 characters")
+    .optional(),
+  isActive: z.boolean().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+// ================================
 // Product Validation Schemas
 // ================================
 
@@ -94,7 +125,7 @@ export const productCreateSchema = z
       .string()
       .min(2, "Medicine name must be at least 2 characters")
       .max(100),
-    category: z.nativeEnum(ProductCategory),
+    categoryId: z.string().min(1, "Category is required"),
     description: z.string().max(1000).optional(),
     priceMin: z
       .union([z.string(), z.number()])
@@ -155,7 +186,7 @@ export const productCreateSchema = z
 export const productUpdateSchema = z
   .object({
     medicineName: z.string().min(2).max(100).optional(),
-    category: z.nativeEnum(ProductCategory).optional(),
+    categoryId: z.string().min(1, "Category is required").optional(),
     description: z.string().max(1000).optional(),
     priceMin: z
       .union([z.string(), z.number()])
@@ -337,6 +368,8 @@ export const fileUploadSchema = z.object({
 export type VendorOnboardingData = z.infer<typeof vendorOnboardingSchema>;
 export type VendorUpdateData = z.infer<typeof vendorUpdateSchema>;
 export type VendorApprovalData = z.infer<typeof vendorApprovalSchema>;
+export type CategoryCreateData = z.infer<typeof categoryCreateSchema>;
+export type CategoryUpdateData = z.infer<typeof categoryUpdateSchema>;
 export type ProductCreateData = z.infer<typeof productCreateSchema>;
 export type ProductUpdateData = z.infer<typeof productUpdateSchema>;
 export type OrderItemData = z.infer<typeof orderItemSchema>;

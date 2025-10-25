@@ -53,11 +53,19 @@ const dummyAdmins = [
   },
 ];
 
-const dummyProducts = [
+// Category mapping for dummy products
+const getCategoryIdByName = async (categoryName) => {
+  const category = await prisma.category.findFirst({
+    where: { name: categoryName },
+  });
+  return category?.id;
+};
+
+const dummyProductsTemplate = [
   {
     medicineName: "Paracetamol",
     brandName: "Crocin",
-    category: "OTC_MEDICINE",
+    categoryName: "OTC Medicine",
     description:
       "Pain reliever and fever reducer. Safe for all ages when used as directed.",
     composition: "Paracetamol 500mg",
@@ -76,7 +84,7 @@ const dummyProducts = [
   {
     medicineName: "Amoxicillin",
     brandName: "Amoxil",
-    category: "PRESCRIPTION_MEDICINE",
+    categoryName: "Prescription Medicine",
     description: "Antibiotic used to treat bacterial infections.",
     composition: "Amoxicillin 500mg",
     manufacturer: "Cipla Ltd",
@@ -94,7 +102,7 @@ const dummyProducts = [
   {
     medicineName: "Vitamin D3",
     brandName: "Calcirol",
-    category: "HEALTH_SUPPLEMENTS",
+    categoryName: "Health Supplements",
     description: "Vitamin D3 supplement for bone health and immunity.",
     composition: "Cholecalciferol 60,000 IU",
     manufacturer: "Cadila Healthcare",
@@ -112,7 +120,7 @@ const dummyProducts = [
   {
     medicineName: "Digital Thermometer",
     brandName: "Omron",
-    category: "MEDICAL_DEVICES",
+    categoryName: "Medical Devices",
     description: "Digital thermometer for accurate temperature measurement.",
     composition: "Electronic device with LCD display",
     manufacturer: "Omron Healthcare",
@@ -130,7 +138,7 @@ const dummyProducts = [
   {
     medicineName: "Baby Lotion",
     brandName: "Johnson's",
-    category: "BABY_CARE",
+    categoryName: "Baby Care",
     description: "Gentle moisturizing lotion for baby's delicate skin.",
     composition: "Glycerin, Mineral Oil, Dimethicone",
     manufacturer: "Johnson & Johnson",
@@ -334,7 +342,7 @@ async function createDummyData() {
     }
 
     // Create Medicines for Pharmacy Vendor
-    console.log("� Creating medicines for pharmacy vendor...");
+    console.log("💊 Creating medicines for pharmacy vendor...");
     try {
       // Find the approved pharmacy vendor
       const pharmacyVendor = await prisma.vendor.findFirst({
@@ -348,14 +356,26 @@ async function createDummyData() {
       });
 
       if (pharmacyVendor && pharmacyVendor.pharmacyProfile) {
-        for (const productData of dummyProducts) {
+        for (const productData of dummyProductsTemplate) {
           try {
+            // Get the category ID from the category name
+            const categoryId = await getCategoryIdByName(
+              productData.categoryName
+            );
+
+            if (!categoryId) {
+              console.warn(
+                `⚠️  Category '${productData.categoryName}' not found, skipping product ${productData.medicineName}`
+              );
+              continue;
+            }
+
             const product = await prisma.product.create({
               data: {
                 pharmacyProfileId: pharmacyVendor.pharmacyProfile.id,
                 medicineName: productData.medicineName,
                 brandName: productData.brandName,
-                category: productData.category,
+                categoryId: categoryId,
                 description: productData.description,
                 composition: productData.composition,
                 manufacturer: productData.manufacturer,

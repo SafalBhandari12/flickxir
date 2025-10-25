@@ -167,6 +167,56 @@ curl -X GET "http://localhost:3000/market/vendors/orders?page=1&limit=50" \
   -H "Authorization: Bearer {{token}}"
 
 # ================================
+# CATEGORY MANAGEMENT ENDPOINTS
+# ================================
+
+### Get All Categories (Public)
+curl -X GET "http://localhost:3000/market/categories?page=1&limit=20&includeInactive=false" \
+  -H "Content-Type: application/json"
+
+### Get All Categories - Include Inactive
+curl -X GET "http://localhost:3000/market/categories?page=1&limit=50&includeInactive=true" \
+  -H "Content-Type: application/json"
+
+### Get All Categories - Pagination Examples
+curl -X GET "http://localhost:3000/market/categories?page=2&limit=10" \
+  -H "Content-Type: application/json"
+
+### Get Category by ID (Public)
+curl -X GET http://localhost:3000/market/categories/{{category_id}} \
+  -H "Content-Type: application/json"
+
+### Create New Category (Admin Only)
+curl -X POST http://localhost:3000/market/categories \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Diabetes Care",
+    "description": "Products for diabetes management and monitoring",
+    "isActive": true,
+    "sortOrder": 5
+  }'
+
+### Update Category (Admin Only)
+curl -X PUT http://localhost:3000/market/categories/{{category_id}} \
+  -H "Authorization: Bearer {{admin_token}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Category Name",
+    "description": "Updated category description",
+    "isActive": true,
+    "sortOrder": 10
+  }'
+
+### Delete Category (Admin Only)
+curl -X DELETE http://localhost:3000/market/categories/{{category_id}} \
+  -H "Authorization: Bearer {{admin_token}}"
+
+### Toggle Category Status (Admin Only)
+curl -X PATCH http://localhost:3000/market/categories/{{category_id}}/toggle-status \
+  -H "Authorization: Bearer {{admin_token}}"
+
+# ================================
 # MEDICINE MANAGEMENT ENDPOINTS
 # ================================
 
@@ -174,7 +224,7 @@ curl -X GET "http://localhost:3000/market/vendors/orders?page=1&limit=50" \
 curl -X POST http://localhost:3000/market/products \
   -H "Authorization: Bearer {{token}}" \
   -F "medicineName=Paracetamol 500mg" \
-  -F "category=OTC_MEDICINE" \
+  -F "categoryId={{category_id}}" \
   -F "description=Pain relief and fever reducer tablets" \
   -F "priceMin=25" \
   -F "priceMax=50" \
@@ -195,7 +245,7 @@ curl -X POST http://localhost:3000/market/products \
   -H "Content-Type: application/json" \
   -d '{
     "medicineName": "Paracetamol 500mg",
-    "category": "OTC_MEDICINE",
+    "categoryId": "{{category_id}}",
     "description": "Pain relief and fever reducer tablets",
     "priceMin": 25,
     "priceMax": 50,
@@ -206,11 +256,11 @@ curl -X POST http://localhost:3000/market/products \
   }'
 
 ### Get All Medicines (Public - No Auth Required)
-curl -X GET "http://localhost:3000/market/products?page=1&limit=10&category=OTC_MEDICINE&minPrice=10&maxPrice=500" \
+curl -X GET "http://localhost:3000/market/products?page=1&limit=10&categoryId={{category_id}}&minPrice=10&maxPrice=500" \
   -H "Content-Type: application/json"
 
 ### Get All Medicines - Different Categories
-curl -X GET "http://localhost:3000/market/products?category=PRESCRIPTION_MEDICINE&page=1&limit=20" \
+curl -X GET "http://localhost:3000/market/products?categoryId={{prescription_category_id}}&page=1&limit=20" \
   -H "Content-Type: application/json"
 
 ### Get All Medicines - Price Range Filters
@@ -222,7 +272,7 @@ curl -X GET "http://localhost:3000/market/products?page=2&limit=25" \
   -H "Content-Type: application/json"
 
 ### Get All Medicines - Combined Filters
-curl -X GET "http://localhost:3000/market/products?category=HEALTH_SUPPLEMENTS&minPrice=100&maxPrice=1000&page=1&limit=12" \
+curl -X GET "http://localhost:3000/market/products?categoryId={{supplements_category_id}}&minPrice=100&maxPrice=1000&page=1&limit=12" \
   -H "Content-Type: application/json"
 
 ### Search Medicines (Public)
@@ -612,15 +662,15 @@ curl -X PUT http://localhost:3000/market/notifications/mark-all-read \
 # ================================
 
 ### Advanced Medicine Search
-curl -X GET "http://localhost:3000/market/products/search?query=paracetamol&category=OTC_MEDICINE&minPrice=10&maxPrice=100&hasDelivery=true&location=Delhi&sortBy=price&sortOrder=asc&page=1&limit=10" \
+curl -X GET "http://localhost:3000/market/products/search?query=paracetamol&categoryId={{category_id}}&minPrice=10&maxPrice=100&hasDelivery=true&location=Delhi&sortBy=price&sortOrder=asc&page=1&limit=10" \
   -H "Content-Type: application/json"
 
 ### Advanced Search - Different Categories
-curl -X GET "http://localhost:3000/market/products/search?query=insulin&category=PRESCRIPTION_MEDICINE&page=1&limit=20" \
+curl -X GET "http://localhost:3000/market/products/search?query=insulin&categoryId={{prescription_category_id}}&page=1&limit=20" \
   -H "Content-Type: application/json"
 
 ### Advanced Search - Sort by Name
-curl -X GET "http://localhost:3000/market/products/search?category=HEALTH_SUPPLEMENTS&sortBy=medicineName&sortOrder=desc&page=1&limit=15" \
+curl -X GET "http://localhost:3000/market/products/search?categoryId={{supplements_category_id}}&sortBy=medicineName&sortOrder=desc&page=1&limit=15" \
   -H "Content-Type: application/json"
 
 ### Advanced Search - Price Range
@@ -792,7 +842,7 @@ curl -X POST http://localhost:3000/market/products \
   -H "Content-Type: application/json" \
   -d '{
     "medicineName": "Paracetamol 500mg",
-    "category": "OTC_MEDICINE",
+    "categoryId": "{{otc_category_id}}",
     "description": "Pain relief and fever reducer tablets",
     "priceMin": 25,
     "priceMax": 50,
@@ -819,9 +869,35 @@ curl -X PUT http://localhost:3000/market/orders/{{order_id}}/status \
 # ================================
 # 1. Replace {{token}} with actual JWT tokens received from auth endpoints
 # 2. Replace {{product_id}}, {{order_id}}, {{vendor_id}} etc. with actual IDs
-# 3. Adjust URLs if running on different host/port
-# 4. Some endpoints require specific roles (ADMIN, VENDOR, CUSTOMER)
-# 5. File upload endpoints require multipart/form-data content type
-# 6. All monetary amounts are in INR (Indian Rupees)
-# 7. Phone numbers should be valid 10-digit Indian mobile numbers
-# 8. Timestamps are in ISO 8601 format
+# 3. Replace {{category_id}} with actual category IDs (get from /market/categories endpoint)
+# 4. Adjust URLs if running on different host/port
+# 5. Some endpoints require specific roles (ADMIN, VENDOR, CUSTOMER)
+# 6. File upload endpoints require multipart/form-data content type
+# 7. All monetary amounts are in INR (Indian Rupees)
+# 8. Phone numbers should be valid 10-digit Indian mobile numbers
+# 9. Timestamps are in ISO 8601 format
+# 10. To get category IDs for product creation, first call GET /market/categories
+
+# ================================
+# CATEGORY ID REFERENCE
+# ================================
+# Use the following endpoints to get actual category IDs:
+# GET /market/categories - Returns all categories with their IDs
+# Example response contains:
+# {
+#   "success": true,
+#   "data": [
+#     {
+#       "id": "cmh5z9sq10000eoaw60ore8hh",
+#       "name": "Prescription Medicine",
+#       "slug": "prescription-medicine",
+#       "productCount": 0
+#     },
+#     {
+#       "id": "cmh5z9sx40001eoaw4du8tgl6", 
+#       "name": "OTC Medicine",
+#       "slug": "otc-medicine",
+#       "productCount": 0
+#     }
+#   ]
+# }

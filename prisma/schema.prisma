@@ -97,6 +97,26 @@ enum BookingStatus {
 }
 
 // ================================
+// CATEGORY MODEL
+// ================================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  slug        String   @unique
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+// ================================
 // AUTHENTICATION & USER MANAGEMENT
 // ================================
 
@@ -487,30 +507,32 @@ model PharmacyProfile {
 }
 
 model Product {
-  id                   String          @id @default(cuid())
-  pharmacyProfileId    String          // Changed from localMarketProfileId
-  medicineName         String          // Changed from productName
-  brandName            String?         // Added brand name
-  category             ProductCategory
+  id                   String   @id @default(cuid())
+  pharmacyProfileId    String   // Changed from localMarketProfileId
+  medicineName         String   // Changed from productName
+  brandName            String?  // Added brand name
+  categoryId           String   // Changed from category enum to foreign key
   description          String?
-  composition          String?         // Added composition/ingredients
-  manufacturer         String?         // Added manufacturer
+  composition          String?  // Added composition/ingredients
+  manufacturer         String?  // Added manufacturer
   priceMin             Float
   priceMax             Float
-  minOrderQuantity     Int             @default(1)
-  packSize             String?         // Added pack size (e.g., "10 tablets", "100ml")
-  dosageForm           String?         // Added dosage form (tablet, syrup, capsule, etc.)
-  requiresPrescription Boolean         @default(false) // Added prescription requirement
-  hasDelivery          Boolean         @default(false)
+  minOrderQuantity     Int      @default(1)
+  packSize             String?  // Added pack size (e.g., "10 tablets", "100ml")
+  dosageForm           String?  // Added dosage form (tablet, syrup, capsule, etc.)
+  requiresPrescription Boolean  @default(false) // Added prescription requirement
+  hasDelivery          Boolean  @default(false)
   deliveryAreas        String[]
-  certifications       String[]        // Drug licenses, FDA approvals, etc.
-  expiryDate           DateTime?       // Added expiry date
-  batchNumber          String?         // Added batch number
-  isAvailable          Boolean         @default(true)
-  stockQuantity        Int?            // Added stock tracking
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
+  certifications       String[] // Drug licenses, FDA approvals, etc.
+  expiryDate           DateTime? // Added expiry date
+  batchNumber          String?  // Added batch number
+  isAvailable          Boolean  @default(true)
+  stockQuantity        Int?     // Added stock tracking
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
+  // Relations
+  category        Category        @relation(fields: [categoryId], references: [id])
   pharmacyProfile PharmacyProfile @relation(fields: [pharmacyProfileId], references: [id], onDelete: Cascade)
   bookings        PharmacyBooking[]
 
